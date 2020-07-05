@@ -1,15 +1,16 @@
 import numpy as np
 import gt4py as gt
+from . import BACKEND
 
 #SERIALBOX_DIR = "/project/c14/install/daint/serialbox2_master/gnu_debug"
 #sys.path.append(SERIALBOX_DIR + "/python")
 import serialbox as ser
 
-IN_VARS = ["im", "ix", "km", "itc", "ntc", "ntk", "ntr", "ncloud", \ #input
-           "clam", "c0s", "c1", "asolfac", "pgcon", "delt", "islimsk", \
+IN_VARS = ["im", "ix", "km", "itc", "ntc", "ntk", "ntr", "ncloud", \
+        "clam", "c0s", "c1", "asolfac", "pgcon", "delt", "islimsk", \
            "psp", "delp", "prslp", "garea", "hpbl", "dot", \
            "phil", "fscav", \
-           "kcnv", "kbot", "ktop", "qtr", "q1", "t1", "u1", \ #inout
+           "kcnv", "kbot", "ktop", "qtr", "q1", "t1", "u1", \
            "v1", "rn", "cnvw", "cnvc", "ud_mf", "dt_mf"]
 OUT_VARS = ["kcnv", "kbot", "ktop", "qtr", "q1", "t1", "u1", \
             "v1", "rn", "cnvw", "cnvc", "ud_mf", "dt_mf"]
@@ -35,7 +36,7 @@ def numpy_dict_to_gt4py_dict(data_dict, backend = BACKEND):
             default_origin = (0, 0, 0)
             if ndim == 1: # 1D array (horizontal dimension)
                 data = data[np.newaxis, :, np.newaxis]
-            else if ndim == 2: #2D array (horizontal dimension, vertical dimension)
+            elif ndim == 2: #2D array (horizontal dimension, vertical dimension)
                 data = data[np.newaxis, :, :]
             data_dict[var] = gt.storage.from_array(data, backend, default_origin)
         else:
@@ -48,16 +49,18 @@ def compare_data(exp_data, ref_data):
         assert np.allclose(exp_data[key], ref_data[key], equal_nan=True), \
             "Data from exp and ref does not match for field " + key
 
-def read_data(tile, inout):
+def read_data(tile, is_in):
     """
     Read serialbox2 format data under `./data` folder with prefix of `Generator_rank{tile}`
     :param tile: specify the number of tile in data
     :type tile: int
-    :param inout: either "in" or "out" meaning input or output data
-    :type inout: string
+    :param is_in: true means in, false means out
+    :type is_in: boolean
     """
     #TODO: read_async and readbuffer
     serializer = ser.Serializer(ser.OpenModeKind.Read, "./data", "Generator_rank" + str(tile))
-    sp = [sp for sp in serializer.savepoint_list() if sp.name.startswith("samfshalcnv-"+inout)]
-    data = data_dict_from_var_list(IN_VARS, serializer, sp)
+    inoutstr = "in" if is_in else "out"
+    sp = [sp for sp in serializer.savepoint_list() if sp.name.startswith("samfshalcnv-"+inoutstr)][0]
+    vars = IN_VARS if is_in else OUT_VARS
+    data = data_dict_from_var_list(vars, serializer, sp)
     return data
