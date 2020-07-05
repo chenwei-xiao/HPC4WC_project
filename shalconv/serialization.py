@@ -24,12 +24,19 @@ def data_dict_from_var_list(var_list, serializer, savepoint):
 def numpy_dict_to_gt4py_dict(data_dict, backend = BACKEND):
     """
     Transform dict of numpy arrays into dict of gt4py storages
+    1d array of shape (nx) will be transformed into storage of shape (1, nx, 1)
+    2d array of shape (nx, nz) will be transformed into storage of shape (1, nx, nz)
     0d array will be transformed into a scalar
     """
     for var in data_dict:
         data = data_dict[var]
-        if len(data.shape) > 0:
-            default_origin = (0,)*len(data.shape)
+        ndim = len(data.shape)
+        if ndim > 0:
+            default_origin = (0, 0, 0)
+            if ndim == 1: # 1D array (horizontal dimension)
+                data = data[np.newaxis, :, np.newaxis]
+            else if ndim == 2: #2D array (horizontal dimension, vertical dimension)
+                data = data[np.newaxis, :, :]
             data_dict[var] = gt.storage.from_array(data, backend, default_origin)
         else:
             data_dict[var] = float(data)
