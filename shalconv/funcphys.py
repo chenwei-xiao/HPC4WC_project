@@ -1,5 +1,5 @@
 import numpy as np
-from shalcnv.physcons import (
+from shalconv.physcons import (
     con_ttp,
     con_psat,
     con_xponal,
@@ -28,7 +28,7 @@ def gpvs():
     xmax   = 330.0
     xinc   = (xmax - xmin)/(nxpvs - 1)
     c2xpvs = 1./xinc
-    c1xpvs = 1. - xmin * c2xpvs
+    c1xpvs = -xmin * c2xpvs
     
     for jx in range(0, nxpvs):
         x = xmin + jx * xinc
@@ -39,8 +39,8 @@ def gpvs():
 # interpolation is done between values in a lookup table computed in 
 # gpvs.
 def fpvs(t):
-    xj = min(max(c1xpvs + c2xpvs * t, 1.), nxpvs)
-    jx = min(xj, nxpvs - 1)
+    xj = min(max(c1xpvs + c2xpvs * t, 0.), nxpvs - 1)
+    jx = int(min(xj, nxpvs - 2))
     
     return tbpvs[jx] + (xj - jx) * (tbpvs[jx+1] - tbpvs[jx])
     
@@ -52,12 +52,12 @@ def fpvsx(t):
     tice = con_ttp - 20.
     
     if t >= tliq:
-        return con_psat * (tr**xponal) * np.exp(xponbl * (1. - tr))
+        return con_psat * (tr**con_xponal) * np.exp(con_xponbl * (1. - tr))
     elif t < tice:
-        return con_psat * (tr**xponai) * np.exp(xponbi * (1. - tr))
+        return con_psat * (tr**con_xponai) * np.exp(con_xponbi * (1. - tr))
     else:
         w = (t - tice)/(tliq - tice)
-        pvl = con_psat * (tr**xponal) * np.exp(xponbl * (1. - tr))
-        pvi = con_psat * (tr**xponai) * np.exp(xponbi * (1. - tr))
+        pvl = con_psat * (tr**con_xponal) * np.exp(con_xponbl * (1. - tr))
+        pvi = con_psat * (tr**con_xponai) * np.exp(con_xponbi * (1. - tr))
         
         return w * pvl + (1. - w) * pvi
