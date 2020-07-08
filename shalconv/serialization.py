@@ -6,6 +6,8 @@ from . import BACKEND
 #sys.path.append(SERIALBOX_DIR + "/python")
 import serialbox as ser
 
+int_vars = ["im", "ix", "km", "itc", "ntc", "ntk", "ntr", "ncloud"]
+
 IN_VARS = ["im", "ix", "km", "itc", "ntc", "ntk", "ntr", "ncloud", \
         "clam", "c0s", "c1", "asolfac", "pgcon", "delt", "islimsk", \
            "psp", "delp", "prslp", "garea", "hpbl", "dot", \
@@ -27,18 +29,28 @@ def numpy_dict_to_gt4py_dict(data_dict, backend = BACKEND):
     Transform dict of numpy arrays into dict of gt4py storages
     1d array of shape (nx) will be transformed into storage of shape (1, nx, 1)
     2d array of shape (nx, nz) will be transformed into storage of shape (1, nx, nz)
+    3d array is kept the same (numpy arrays), doing slices later
     0d array will be transformed into a scalar
     """
+    ix = data_dict["ix"]#im <= ix
+    km = data_dict["km"]
     for var in data_dict:
         data = data_dict[var]
         ndim = len(data.shape)
-        if ndim > 0:
+        #if var == "fscav":
+        #    data_dict["fscav"] = data # shape = (number of tracers)
+        if (ndim > 0) and (ndim <= 2):
             default_origin = (0, 0, 0)
+            arrdata = np.zeros((1,ix,km))
             if ndim == 1: # 1D array (horizontal dimension)
-                data = data[np.newaxis, :, np.newaxis]
+                arrdata[...] = data[np.newaxis, :, np.newaxis]
             elif ndim == 2: #2D array (horizontal dimension, vertical dimension)
-                data = data[np.newaxis, :, :]
-            data_dict[var] = gt.storage.from_array(data, backend, default_origin)
+                arrdata[...] = data[np.newaxis, :, :]
+            data_dict[var] = gt.storage.from_array(arrdata, backend, default_origin)
+        #elif ndim == 3: #3D array qntr(horizontal dimension, vertical dimension, number of tracers)
+        #    data_dict[var] = data
+        elif var in int_vars:
+            data_dict[var] = int(data)
         else:
             data_dict[var] = float(data)
     
