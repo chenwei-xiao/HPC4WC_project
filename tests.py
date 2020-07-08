@@ -22,7 +22,6 @@ def test_fpvs_lookupvsexact():
     
     # Compute fpvs values
     n = 100
-    # ~ rand_temp = np.random.rand(n)
     rand_temp = np.linspace(180.0, 330.0, n)
     fpvs_arr = np.empty(n)
     fpvsx_arr = np.empty(n)
