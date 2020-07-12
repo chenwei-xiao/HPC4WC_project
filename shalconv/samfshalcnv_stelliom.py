@@ -66,103 +66,103 @@ def samfshalcnv(data_dict):
     dt_mf      = data_dict["dt_mf"]
     
     ### Local storages for 1D arrays (integer) ###
-    kpbl       = gt.storage.ones (BACKEND, default_origin, shape, dtype=INT)
-    kb         = gt.storage.empty(BACKEND, default_origin, shape, dtype=INT)
-    kbcon      = gt.storage.empty(BACKEND, default_origin, shape, dtype=INT)
-    kbcon1     = gt.storage.empty(BACKEND, default_origin, shape, dtype=INT)
-    ktcon      = gt.storage.ones (BACKEND, default_origin, shape, dtype=INT)
-    ktcon1     = gt.storage.empty(BACKEND, default_origin, shape, dtype=INT)
-    ktconn     = gt.storage.ones (BACKEND, default_origin, shape, dtype=INT)
-    kbm        = gt.storage.empty(BACKEND, default_origin, shape, dtype=INT)
-    kmax       = gt.storage.empty(BACKEND, default_origin, shape, dtype=INT)
+    kpbl       = gt.storage.ones (BACKEND, default_origin, shape, dtype=DTYPE_INT)
+    kb         = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_INT)
+    kbcon      = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_INT)
+    kbcon1     = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_INT)
+    ktcon      = gt.storage.ones (BACKEND, default_origin, shape, dtype=DTYPE_INT)
+    ktcon1     = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_INT)
+    ktconn     = gt.storage.ones (BACKEND, default_origin, shape, dtype=DTYPE_INT)
+    kbm        = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_INT)
+    kmax       = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_INT)
     
     ### Local storages for 1D arrays ("bool") ###
-    cnvflg     = gt.storage.ones (BACKEND, default_origin, shape, dtype=INT)
-    flg        = gt.storage.empty(BACKEND, default_origin, shape, dtype=INT)
+    cnvflg     = gt.storage.ones (BACKEND, default_origin, shape, dtype=DTYPE_INT)
+    flg        = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_INT)
     
     ### Local storages for 1D arrays (float) ###
-    aa1        = gt.storage.zeros(BACKEND, default_origin, shape, dtype=FLT)
-    cina       = gt.storage.zeros(BACKEND, default_origin, shape, dtype=FLT)
-    tkemean    = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    clamt      = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    ps         = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    del        = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    prsl       = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    umean      = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    tauadv     = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    gdx        = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    delhbar    = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    delq       = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    delq2      = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    delqbar    = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    delqev     = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    deltbar    = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    deltv      = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    dtconv     = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    edt        = gt.storage.zeros(BACKEND, default_origin, shape, dtype=FLT)
-    pdot       = gt.storage.zeros(BACKEND, default_origin, shape, dtype=FLT)
-    po         = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    qcond      = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    qevap      = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    hmax       = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    rntot      = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    vshear     = gt.storage.zeros(BACKEND, default_origin, shape, dtype=FLT)
-    xlamud     = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    xmb        = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    xmbmax     = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    delubar    = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    delvbar    = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    c0         = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    wc         = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    scaldfunc  = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    sigmagfm   = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    qlko_ktcon = gt.storage.zeros(BACKEND, default_origin, shape, dtype=FLT)
-    sumx       = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    tx1        = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
+    aa1        = gt.storage.zeros(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    cina       = gt.storage.zeros(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    tkemean    = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    clamt      = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    ps         = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    del        = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    prsl       = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    umean      = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    tauadv     = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    gdx        = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    delhbar    = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    delq       = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    delq2      = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    delqbar    = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    delqev     = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    deltbar    = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    deltv      = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    dtconv     = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    edt        = gt.storage.zeros(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    pdot       = gt.storage.zeros(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    po         = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    qcond      = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    qevap      = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    hmax       = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    rntot      = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    vshear     = gt.storage.zeros(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    xlamud     = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    xmb        = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    xmbmax     = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    delubar    = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    delvbar    = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    c0         = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    wc         = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    scaldfunc  = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    sigmagfm   = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    qlko_ktcon = gt.storage.zeros(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    sumx       = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    tx1        = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
     
     ### Local storages for 2D arrays (float) ###
-    pfld       = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    to         = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    qo         = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    uo         = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    vo         = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    qeso       = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    wu2        = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    buo        = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    drag       = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    dellal     = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    dbyo       = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    zo         = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    xlamue     = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    heo        = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    heso       = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    dellah     = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    dellaq     = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    dellau     = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    dellav     = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    hcko       = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    ucko       = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    vcko       = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    qcko       = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    qrcko      = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    eta        = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    zi         = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    pwo        = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    c0t        = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    cnvwt      = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
+    pfld       = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    to         = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    qo         = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    uo         = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    vo         = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    qeso       = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    wu2        = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    buo        = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    drag       = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    dellal     = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    dbyo       = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    zo         = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    xlamue     = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    heo        = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    heso       = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    dellah     = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    dellaq     = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    dellau     = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    dellav     = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    hcko       = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    ucko       = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    vcko       = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    qcko       = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    qrcko      = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    eta        = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    zi         = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    pwo        = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    c0t        = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    cnvwt      = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
     
     ### Local storages for 2D arrays (float, tracers) ###
-    delebar    = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
+    delebar    = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
     
     ### Local storages for 3D arrays (float, tracers), this we'll contain slices ###
-    ctr        = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    ctro       = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    dellae     = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    ecko       = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
-    qaero      = gt.storage.empty(BACKEND, default_origin, shape, dtype=FLT)
+    ctr        = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    ctro       = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    dellae     = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    ecko       = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    qaero      = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
     
     ### K-indices field ###
-    k_idx      = gt.storage.from_array(np.tile(np.linspace(0, km, km + 1, dtype=INT), shape), BACKEND, default_origin)
+    k_idx      = gt.storage.from_array(np.tile(np.linspace(0, km, km + 1, dtype=DTYPE_INT), shape), BACKEND, default_origin)
     
     ### Local Parameters ###
     g          = grav
@@ -313,7 +313,7 @@ def pa_to_cb( psp  : FLT_FIELD,
         
 
 @gtscript.stencil(backend=BACKEND, rebuild=REBUILD, externals={"sqrt": sqrt})
-def init_col_arr( km    : INT,
+def init_col_arr( km    : DTYPE_INT,
                   kcnv  : INT_FIELD, 
                   cnvflg: INT_FIELD,
                   kbot  : INT_FIELD,
@@ -344,9 +344,9 @@ def init_col_arr( km    : INT,
 
 
 @gtscript.stencil(backend=BACKEND, rebuild=REBUILD, externals={"exp": exp})
-def init_par_and_arr( c0s    : FLT,
-                      asolfac: FLT,
-                      d0     : FLT,
+def init_par_and_arr( c0s    : DTYPE_FLOAT,
+                      asolfac: DTYPE_FLOAT,
+                      d0     : DTYPE_FLOAT,
                       islimsk: INT_FIELD,
                       c0     : FLT_FIELD,
                       t1     : FLT_FIELD,
@@ -386,7 +386,7 @@ def init_par_and_arr( c0s    : FLT,
 
 
 @gtscript.stencil(backend=BACKEND, rebuild=REBUILD, externals={"min": min, "max": max})
-def init_final( km    : INT,
+def init_final( km    : DTYPE_INT,
                 kbm   : INT_FIELD,
                 k_idx : INT_FIELD,
                 kmax  : INT_FIELD,
