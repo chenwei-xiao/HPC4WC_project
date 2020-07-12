@@ -9,7 +9,7 @@ import serialbox as ser
 int_vars = ["im", "ix", "km", "itc", "ntc", "ntk", "ntr", "ncloud"]
 
 IN_VARS = ["im", "ix", "km", "itc", "ntc", "ntk", "ntr", "ncloud", \
-        "clam", "c0s", "c1", "asolfac", "pgcon", "delt", "islimsk", \
+           "clam", "c0s", "c1", "asolfac", "pgcon", "delt", "islimsk", \
            "psp", "delp", "prslp", "garea", "hpbl", "dot", \
            "phil", "fscav", \
            "kcnv", "kbot", "ktop", "qtr", "q1", "t1", "u1", \
