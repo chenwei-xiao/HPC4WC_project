@@ -3,6 +3,7 @@ import numpy as np
 
 ### Math constants ###
 con_pi       = np.pi          # Pi
+con_e        = np.e           # e
 con_sqrt2    = np.sqrt(2)     # Square root of 2
 con_sqrt3    = np.sqrt(3)     # Square root of 3
 
