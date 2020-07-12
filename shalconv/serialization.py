@@ -1,6 +1,6 @@
 import numpy as np
 import gt4py as gt
-from . import BACKEND
+from . import BACKEND, DTYPE_FLOAT
 
 #SERIALBOX_DIR = "/project/c14/install/daint/serialbox2_master/gnu_debug"
 #sys.path.append(SERIALBOX_DIR + "/python")
@@ -46,7 +46,7 @@ def numpy_dict_to_gt4py_dict(data_dict, backend = BACKEND):
                 arrdata[...] = data[np.newaxis, :, np.newaxis]
             elif ndim == 2: #2D array (horizontal dimension, vertical dimension)
                 arrdata[...] = data[np.newaxis, :, :]
-            data_dict[var] = gt.storage.from_array(arrdata, backend, default_origin)
+            data_dict[var] = gt.storage.from_array(arrdata, backend, default_origin, dtype = DTYPE_FLOAT)
         #elif ndim == 3: #3D array qntr(horizontal dimension, vertical dimension, number of tracers)
         #    data_dict[var] = data
         elif var in int_vars:
