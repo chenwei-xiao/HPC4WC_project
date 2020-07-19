@@ -1,5 +1,5 @@
 from .physcons import con_g as g, qamin
-from . import DTYPE_FLOAT, BACKEND
+from . import DTYPE_FLOAT, DTYPE_INT, BACKEND, INT_FIELD, FLT_FIELD
 import gt4py as gt
 from gt4py import gtscript
 from __gtscript__ import PARALLEL, FORWARD, BACKWARD, computation, interval
@@ -41,17 +41,17 @@ def set_ecko2(ctro2, cnvflg, kb, index_k):
 
 @gtscript.stencil(backend = BACKEND)
 def set_work_arrays(
-    qtr: gtscript.Field[DTYPE_FLOAT],
-    xmb: gtscript.Field[DTYPE_FLOAT],
-    delp: gtscript.Field[DTYPE_FLOAT],
-    kmax: gtscript.Field[int],
-    kb: gtscript.Field[int],
-    cnvflg: gtscript.Field[int],
-    index_k: gtscript.Field[int],
-    qaero: gtscript.Field[DTYPE_FLOAT],
-    xmbp: gtscript.Field[DTYPE_FLOAT],
-    ctro2: gtscript.Field[DTYPE_FLOAT],
-    ecko2: gtscript.Field[DTYPE_FLOAT]
+    qtr: FLT_FIELD,
+    xmb: FLT_FIELD,
+    delp: FLT_FIELD,
+    kmax: INT_FIELD,
+    kb: INT_FIELD,
+    cnvflg: INT_FIELD,
+    index_k: INT_FIELD,
+    qaero: FLT_FIELD,
+    xmbp: FLT_FIELD,
+    ctro2: FLT_FIELD,
+    ecko2: FLT_FIELD
 ):
     with computation(PARALLEL), interval(...):
         qaero = set_qaero(qtr, kmax, index_k)
@@ -62,21 +62,21 @@ def set_work_arrays(
 
 @gtscript.stencil(backend = BACKEND)
 def calc_ecko2_chem_c_dellae2(
-    zi: gtscript.Field[DTYPE_FLOAT],
-    xlamue: gtscript.Field[DTYPE_FLOAT],
-    xlamud: gtscript.Field[DTYPE_FLOAT],
-    ctro2: gtscript.Field[DTYPE_FLOAT],
-    c0t: gtscript.Field[DTYPE_FLOAT],
-    eta: gtscript.Field[DTYPE_FLOAT],
-    xmbp: gtscript.Field[DTYPE_FLOAT],
-    kb: gtscript.Field[int],
-    ktcon: gtscript.Field[int],
-    cnvflg: gtscript.Field[int],
-    index_k: gtscript.Field[int],
-    ecko2: gtscript.Field[DTYPE_FLOAT],
-    chem_c: gtscript.Field[DTYPE_FLOAT],
-    # chem_pw: gtscript.Field[DTYPE_FLOAT],
-    dellae2: gtscript.Field[DTYPE_FLOAT],
+    zi: FLT_FIELD,
+    xlamue: FLT_FIELD,
+    xlamud: FLT_FIELD,
+    ctro2: FLT_FIELD,
+    c0t: FLT_FIELD,
+    eta: FLT_FIELD,
+    xmbp: FLT_FIELD,
+    kb: INT_FIELD,
+    ktcon: INT_FIELD,
+    cnvflg: INT_FIELD,
+    index_k: INT_FIELD,
+    ecko2: FLT_FIELD,
+    chem_c: FLT_FIELD,
+    # chem_pw: FLT_FIELD,
+    dellae2: FLT_FIELD,
     *,
     fscav: float
 ):
@@ -110,10 +110,10 @@ def calc_ecko2_chem_c_dellae2(
 
 @gtscript.stencil(backend = BACKEND)
 def calc_dtime_max_arr(
-    delp: gtscript.Field[DTYPE_FLOAT],
-    ktcon: gtscript.Field[int],
-    index_k: gtscript.Field[int],
-    dtime_max_arr: gtscript.Field[DTYPE_FLOAT],
+    delp: FLT_FIELD,
+    ktcon: INT_FIELD,
+    index_k: INT_FIELD,
+    dtime_max_arr: FLT_FIELD,
     *,
     delt: float
 ):
@@ -128,18 +128,18 @@ def calc_dtime_max_arr(
 
 @gtscript.stencil(backend = BACKEND)
 def calc_detrainment_entrainment(
-    zi: gtscript.Field[DTYPE_FLOAT],
-    xlamue: gtscript.Field[DTYPE_FLOAT],
-    xlamud: gtscript.Field[DTYPE_FLOAT],
-    ecko2: gtscript.Field[DTYPE_FLOAT],
-    ctro2: gtscript.Field[DTYPE_FLOAT],
-    eta: gtscript.Field[DTYPE_FLOAT],
-    xmbp: gtscript.Field[DTYPE_FLOAT],
-    kb: gtscript.Field[int],
-    ktcon: gtscript.Field[int],
-    cnvflg: gtscript.Field[int],
-    index_k: gtscript.Field[int],
-    dellae2: gtscript.Field[DTYPE_FLOAT]
+    zi: FLT_FIELD,
+    xlamue: FLT_FIELD,
+    xlamud: FLT_FIELD,
+    ecko2: FLT_FIELD,
+    ctro2: FLT_FIELD,
+    eta: FLT_FIELD,
+    xmbp: FLT_FIELD,
+    kb: INT_FIELD,
+    ktcon: INT_FIELD,
+    cnvflg: INT_FIELD,
+    index_k: INT_FIELD,
+    dellae2: FLT_FIELD
 ):
     with computation(PARALLEL), interval(1, -1):
         if cnvflg and (index_k < ktcon):
@@ -165,18 +165,18 @@ def calc_detrainment_entrainment(
 
 @gtscript.stencil(backend = BACKEND)
 def calc_mass_flux(
-    eta: gtscript.Field[DTYPE_FLOAT],
-    xmb: gtscript.Field[DTYPE_FLOAT],
-    qaero: gtscript.Field[DTYPE_FLOAT],
-    delp: gtscript.Field[DTYPE_FLOAT],
-    kb: gtscript.Field[int],
-    ktcon: gtscript.Field[int],
-    cnvflg: gtscript.Field[int],
-    index_k: gtscript.Field[int],
-    flx_lo: gtscript.Field[DTYPE_FLOAT],
-    totlout: gtscript.Field[DTYPE_FLOAT],
-    clipout: gtscript.Field[DTYPE_FLOAT],
-    dellae2: gtscript.Field[DTYPE_FLOAT],
+    eta: FLT_FIELD,
+    xmb: FLT_FIELD,
+    qaero: FLT_FIELD,
+    delp: FLT_FIELD,
+    kb: INT_FIELD,
+    ktcon: INT_FIELD,
+    cnvflg: INT_FIELD,
+    index_k: INT_FIELD,
+    flx_lo: FLT_FIELD,
+    totlout: FLT_FIELD,
+    clipout: FLT_FIELD,
+    dellae2: FLT_FIELD,
     *,
     dtime_max: float
 ):
@@ -209,12 +209,12 @@ def calc_mass_flux(
 
 @gtscript.stencil(backend = BACKEND)
 def calc_final(
-    dellae2: gtscript.Field[DTYPE_FLOAT],
-    kmax: gtscript.Field[int],
-    ktcon: gtscript.Field[int],
-    cnvflg: gtscript.Field[int],
-    index_k: gtscript.Field[int],
-    qaero: gtscript.Field[DTYPE_FLOAT],
+    dellae2: FLT_FIELD,
+    kmax: INT_FIELD,
+    ktcon: INT_FIELD,
+    cnvflg: INT_FIELD,
+    index_k: INT_FIELD,
+    qaero: FLT_FIELD,
     *,
     delt: float
 ):
@@ -252,7 +252,7 @@ def samfshalcnv_aerosols(im, ix, km, itc, ntc, ntr, delt,
     :param xlamud: (im)
     :param delp: (ix,km) pressure?
     :param qtr_np: (ix,km,ntr+2) numpy array
-    :param qaero_np: (im,km,ntc) numpy array
+    :param qaero_np: OUTPUT (im,km,ntc) numpy array
     """
     shape_2d = (1, ix, km)
     default_origin = (0, 0, 0)
@@ -276,7 +276,7 @@ def samfshalcnv_aerosols(im, ix, km, itc, ntc, ntr, delt,
     ## Misc
     #kmax_np = kmax[0, :, 0].view(np.ndarray)
     index_ijk_np = np.indices(shape_2d) 
-    index_k = gt.storage.from_array(index_ijk_np[2] + 1, BACKEND, default_origin, shape_2d, dtype = int) # index STARTING FROM 1
+    index_k = gt.storage.from_array(index_ijk_np[2] + 1, BACKEND, default_origin, shape_2d, dtype = IDTYPE_INT) # index STARTING FROM 1
     dtime_max_arr = gt.storage.empty(BACKEND, default_origin, shape_2d, dtype = DTYPE_FLOAT)
 
     # Begin
