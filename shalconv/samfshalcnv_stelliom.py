@@ -1196,7 +1196,7 @@ def feedback_control_update( dt2    : DTYPE_FLOAT,
     # - Update column-integrated tendencies to account for 
     #   evaporation of convective precipitation
     
-    # TODO:
+    # TODO: LAST MISSING LOOP
     # ~ with computation(BACKWARD), interval(...):
     
         # ~ if k_idx <= kmax:
@@ -1228,7 +1228,7 @@ def feedback_control_update( dt2    : DTYPE_FLOAT,
                 # Calculate convective cloud cover, which is used when 
                 # pdf-based cloud fraction is used
                 val1 = 1.0 + 675.0 * eta * xmb
-                cnvc = 0.04 * log(val1)    # How to implement log?
+                cnvc = 0.04 * log(val1, 1.0e4)  # 1.0e4 seems to get reasonable results, since val1 is on average ~50
                 val2 = 0.2
                 val3 = 0.0
                 cnvc = min(cnvc, val2)
@@ -1399,6 +1399,11 @@ def max(x, y):
         return x
     else:
         return y
+        
+
+@gtscript.function
+def log(x, a):
+	return a * (x**(1.0/a)) - a
         
 
 def slice_to_3d(slice):
