@@ -425,26 +425,26 @@ def samfshalcnv(data_dict):
     # Separate detrained cloud water into liquid and ice species as a 
     # function of temperature only
     if ncloud > 0:
-		
-		qtr_0 = gt.storage.from_array(slice_to_3d(qtr[:, :, 0]), BACKEND, default_origin)
+        
+        qtr_0 = gt.storage.from_array(slice_to_3d(qtr[:, :, 0]), BACKEND, default_origin)
         qtr_1 = gt.storage.from_array(slice_to_3d(qtr[:, :, 1]), BACKEND, default_origin)
         
         separate_detrained_cw( dt2,
-							   tcr,
-							   tcrf,
-							   cnvflg,
-							   k_idx,
-							   kbcon,
-							   ktcon,
-							   dellal,
-							   xmb,
-							   t1,
-							   qtr_1,
-							   qtr_0,
-							   origin=origin,
+                               tcr,
+                               tcrf,
+                               cnvflg,
+                               k_idx,
+                               kbcon,
+                               ktcon,
+                               dellal,
+                               xmb,
+                               t1,
+                               qtr_1,
+                               qtr_0,
+                               origin=origin,
                                domain=domain )
         
-		# UPDATE QTR BASED ON RESULTS IN THE SLICE QTR_0 AND QTR_1!
+        # UPDATE QTR BASED ON RESULTS IN THE SLICE QTR_0 AND QTR_1!
     
     if do_aerosols: 
            
@@ -472,24 +472,24 @@ def samfshalcnv(data_dict):
             
     # Include TKE contribution from shallow convection
     if ntk > 0:
-		
-		qtr_ntk = gt.storage.from_array(slice_to_3d(qtr[:, :, ntk]), BACKEND, default_origin)
+        
+        qtr_ntk = gt.storage.from_array(slice_to_3d(qtr[:, :, ntk]), BACKEND, default_origin)
         
         tke_contribution( betaw,
-						  cnvflg,
-						  k_idx,
-						  kb,
-						  ktop,
-						  eta,
-						  xmb,
-						  pfld,
-						  t1, 
-						  sigmagfm,
-						  qtr_ntk,
-						  origin=origin,
+                          cnvflg,
+                          k_idx,
+                          kb,
+                          ktop,
+                          eta,
+                          xmb,
+                          pfld,
+                          t1, 
+                          sigmagfm,
+                          qtr_ntk,
+                          origin=origin,
                           domain=domain )
         
-		# UPDATE QTR BASED ON RESULTS IN THE SLICE QTR_SHIFT!
+        # UPDATE QTR BASED ON RESULTS IN THE SLICE QTR_SHIFT!
 
 ########################################################################
 
@@ -1319,53 +1319,53 @@ def separate_detrained_cw( dt2   : DTYPE_FLOAT,
                            t1    : FIELD_FLOAT,
                            qtr_1 : FIELD_FLOAT,
                            qtr_0 : FIELD_FLOAT ):
-							   
-	from __gtscript__ import PARALLEL, computation, interval 
+                               
+    from __gtscript__ import PARALLEL, computation, interval 
     
     with computation(PARALLEL), interval(...):
-		
-		# Separate detrained cloud water into liquid and ice species as 
-		# a function of temperature only
-		if cnvflg == 1 and k_idx >= kbcon and k_idx <= ktcon:
-			
-			tem  = dellal * xmb * dt2
-			val1 = 1.0
-			val2 = 0.0
-			tem1 = min(val1, (tcr - t1) * tcrf)
-			tem1 = max(val2, tem1)
-			
-			if qtr_1 > -999.0:
-				qtr_0 = qtr_0 + tem * tem1
-				qtr_1 = qtr_1 + tem * (1.0 - tem1)
-			else:
-				qtr_0 = qtr_0 + tem
-				
+        
+        # Separate detrained cloud water into liquid and ice species as 
+        # a function of temperature only
+        if cnvflg == 1 and k_idx >= kbcon and k_idx <= ktcon:
+            
+            tem  = dellal * xmb * dt2
+            val1 = 1.0
+            val2 = 0.0
+            tem1 = min(val1, (tcr - t1) * tcrf)
+            tem1 = max(val2, tem1)
+            
+            if qtr_1 > -999.0:
+                qtr_0 = qtr_0 + tem * tem1
+                qtr_1 = qtr_1 + tem * (1.0 - tem1)
+            else:
+                qtr_0 = qtr_0 + tem
+                
 
 @gtscript.stencil(backend=BACKEND, rebuild=REBUILD, externals={"max": max})
 def tke_contribution( betaw   : DTYPE_FLOAT,
                       cnvflg  : FIELD_INT,
-					  k_idx   : FIELD_INT,
-					  kb      : FIELD_INT,
-					  ktop    : FIELD_INT,
-					  eta     : FIELD_FLOAT,
-					  xmb     : FIELD_FLOAT,
-					  pfld    : FIELD_FLOAT,
-					  t1      : FIELD_FLOAT, 
-					  sigmagfm: FIELD_FLOAT,
-					  qtr_ntk : FIELD_FLOAT ):
-						  
-	from __gtscript__ import PARALLEL, computation, interval 
+                      k_idx   : FIELD_INT,
+                      kb      : FIELD_INT,
+                      ktop    : FIELD_INT,
+                      eta     : FIELD_FLOAT,
+                      xmb     : FIELD_FLOAT,
+                      pfld    : FIELD_FLOAT,
+                      t1      : FIELD_FLOAT, 
+                      sigmagfm: FIELD_FLOAT,
+                      qtr_ntk : FIELD_FLOAT ):
+                          
+    from __gtscript__ import PARALLEL, computation, interval 
     
     with computation(PARALLEL), interval(1, -1):
-		
-		# Include TKE contribution from shallow convection
-		if cnvflg == 1 and k_idx > kb and k < ktop:
-			
-			tem      = 0.5 * (eta[0, 0, -1] + eta[0, 0, 0]) * xmb
-			tem1     = pfld * 100.0/(rd * t1)
-			sigmagfm = max(sigmagfm, betaw)
-			ptem     = tem/(sigmagfm * tem1)
-			qtr_ntk  = qtr_ntk + 0.5 * sigmagfm * ptem * ptem
+        
+        # Include TKE contribution from shallow convection
+        if cnvflg == 1 and k_idx > kb and k < ktop:
+            
+            tem      = 0.5 * (eta[0, 0, -1] + eta[0, 0, 0]) * xmb
+            tem1     = pfld * 100.0/(rd * t1)
+            sigmagfm = max(sigmagfm, betaw)
+            ptem     = tem/(sigmagfm * tem1)
+            qtr_ntk  = qtr_ntk + 0.5 * sigmagfm * ptem * ptem
 
 ########################################################################
 
