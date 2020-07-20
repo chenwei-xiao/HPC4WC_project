@@ -440,7 +440,9 @@ def samfshalcnv(data_dict):
 							   xmb,
 							   t1,
 							   qtr_1,
-							   qtr_0 )
+							   qtr_0,
+							   origin=origin,
+                               domain=domain )
         
 		# UPDATE QTR BASED ON RESULTS IN THE SLICE QTR_0 AND QTR_1!
     
@@ -483,7 +485,9 @@ def samfshalcnv(data_dict):
 						  pfld,
 						  t1, 
 						  sigmagfm,
-						  qtr_ntk )
+						  qtr_ntk,
+						  origin=origin,
+                          domain=domain )
         
 		# UPDATE QTR BASED ON RESULTS IN THE SLICE QTR_SHIFT!
 
