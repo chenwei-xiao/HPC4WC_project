@@ -1,8 +1,11 @@
+import pytest
 import gt4py as gt
 from gt4py import gtscript
-from shalconv.funcphys import fpvsx_gt as fpvs
-from shalconv.samfaerosols import samfshalcnv_aerosols
-from . import *
+#import sys
+#sys.path.append("..")
+from shalconv.kernels.stencils_part1 import *
+from shalconv.serialization import read_data, compare_data, OUT_VARS, numpy_dict_to_gt4py_dict
+from shalconv import *
 from shalconv.physcons import (
     con_g     as grav,
     con_cp    as cp,
@@ -18,8 +21,7 @@ from shalconv.physcons import (
     con_e     as e
 )
 
-
-def samfshalcnv(data_dict):
+def samfshalcnv_part1(data_dict):
     """
     Scale-Aware Mass-Flux Shallow Convection
     
@@ -171,7 +173,7 @@ def samfshalcnv(data_dict):
     qaero      = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
     
     ### K-indices field ###
-    k_idx      = gt.storage.from_array(np.tile(np.linspace(0, km, km + 1, dtype=DTYPE_INT), shape), BACKEND, default_origin)
+    k_idx      = gt.storage.from_array(np.indices(shape)[2] + 1, BACKEND, default_origin, dtype=DTYPE_INT)
     
     ### Local Parameters ###
     g          = grav
@@ -214,8 +216,7 @@ def samfshalcnv(data_dict):
     ### Compute preliminary quantities needed for the static and feedback control portions of the algorithm ###
     
     # Convert input Pa terms to Cb terms
-    pa_to_cb( psp, prslp, delp, ps, prsl, del0,
-              origin=origin, domain=domain )
+    pa_to_cb( psp, prslp, delp, ps, prsl, del0)
     
     km1 = km - 1
     
@@ -224,8 +225,7 @@ def samfshalcnv(data_dict):
     # Initialize column-integrated and other single-value-per-column 
     # variable arrays
     init_col_arr( km, kcnv, cnvflg, kbot, ktop,
-                  kbcon, kb, rn, gdx, garea, 
-                  origin=origin, domain=domain )
+                  kbcon, kb, rn, gdx, garea)
     
     # Return to the calling routine if deep convection is present or the 
     # surface buoyancy flux is negative
@@ -233,8 +233,7 @@ def samfshalcnv(data_dict):
     
     # Initialize further parameters and arrays
     init_par_and_arr( c0s, asolfac, d0, islimsk, c0,
-                      t1, c0t, cnvw, cnvc, ud_mf, dt_mf,
-                      origin=origin, domain=domain )
+                      t1, c0t, cnvw, cnvc, ud_mf, dt_mf)
                       
     dt2   = delt
     
@@ -255,8 +254,8 @@ def samfshalcnv(data_dict):
     init_final( km, kbm, k_idx, kmax, flg, cnvflg, kpbl, tx1, 
                 ps, prsl, zo, phil, zi, pfld, eta, hcko, qcko, 
                 qrcko, ucko, vcko, dbyo, pwo, dellal, to, qo, 
-                uo, vo, wu2, buo, drag, cnvwt, qeso, heo, heso,
-                origin=origin, domain=domain )
+                uo, vo, wu2, buo, drag, cnvwt, qeso, heo, heso, hpbl,
+                t1, q1, u1, v1)
                 
     
     # Tracers loop (THIS GOES AT THE END AND POSSIBLY MERGED WITH OTHER 
@@ -270,198 +269,19 @@ def samfshalcnv(data_dict):
         # Initialize tracers. Keep in mind that, qtr slice is for the 
         # n-th tracer, while the other storages are slices representing 
         # the (n-2)-th tracer.
-        init_tracers( cnvflg, k_idx, kmax, ctr, ctro, ecko, qtr_shift,
-                      origin=origin, domain=domain )
-                      
-    # Alternative to merge with main tracer loop
-    #for n in range(0, ntr):
-    #    
-    #    kk = n+2
-    #    
-    #    qtr_shift = gt.storage.from_array(slice_to_3d(qtr[:, :, kk]), BACKEND, default_origin)
-    #    
-    #    # Initialize tracers. Keep in mind that, qtr slice is for the 
-    #    # (n+2)-th tracer, while the other storages are slices 
-    #    # representing the n-th tracer.
-    #    init_tracers( cnvflg,
-    #                  k_idx,
-    #                  kmax,
-    #                  ctr, 
-    #                  ctro, 
-    #                  ecko,
-    #                  qtr_shift,
-    #                  origin=origin, 
-    #                  domain=domain )
+        init_tracers( cnvflg, k_idx, kmax, ctr, ctro, ecko, qtr_shift)
 
-########################################################################
+def test_part1():
+    data_dict = read_data(0,"in", path = "/data")
+    numpy_dict_to_gt4py_dict(data_dict)
+    samfshalcnv_part1(data_dict)
+    import numpy.f2py, os
+    os.system("f2py --f2cmap fortran/.f2py_f2cmap -c -m part1 fortran/part1.f90")
+    #numpy.f2py.run_main(['--f2cmap', 'fortran/.f2py_f2cmap', '-c', '-m', 'part1', 'fortran/part1.f90'])
+    import part1
+    from shalconv.funcphys import fpvsx
+    t = 20.0
+    assert abs(part1.mod.fpvsx(t) - fpvsx(t)) < 1e-6, "Fortran impl and numpy impl don't match!"
 
-
-######################### FROM LINES 1304-1513 #########################
-# Calculate the tendencies of the state variables (per unit cloud base 
-# mass flux) and the cloud base mass flux
-########################################################################
-    
-    # Calculate the tendencies of the state variables (per unit cloud base 
-    # mass flux) and the cloud base mass flux
-    comp_tendencies( g, betaw, dtmin, dt2, dtmax, dxcrt, cnvflg, k_idx,
-                     kmax, kb, ktcon, ktcon1, kbcon1, kbcon, dellah,
-                     dellaq, dellau, dellav, del0, zi, zi_ktcon1,
-                     zi_kbcon1, heo, qo, xlamue, xlamud, eta, hcko,
-                     qrcko, uo, ucko, vo, vcko, qcko, dellal, 
-                     qlko_ktcon, wc, gdx, dtconv, u1, v1, po, to, 
-                     tauadv, xmb, sigmagfm, garea, scaldfunc, xmbmax,
-                     origin=origin, domain=domain )
-    
-    # Tracers loop (THIS GOES AT THE END AND POSSIBLY MERGED WITH OTHER 
-    # TRACER LOOPS!)
-    for n in range(0, ntr):
-        
-        # Calculate the tendencies of the state variables (tracers part)
-        comp_tendencies_tr( g, 
-                            cnvflg, 
-                            k_idx, 
-                            kmax, 
-                            kb, 
-                            ktcon, 
-                            dellae, 
-                            del0, 
-                            eta, 
-                            ctro, 
-                            ecko, 
-                            origin=origin, 
-                            domain=domain )
-                            
-    
-    # Transport aerosols if present (THIS HAS DEPENDENCIES ON THE 
-    # TRACERS LOOP, SO WE'LL PROBABLY NEED TO SPLIT IT HERE, THUS ALSO 
-    # HAVING TO UPDATE THE ORIGINAL TRACER'S FIELDS WITH THE PER SLICE 
-    # COMPUTATION!)
-    if do_aerosols:
-        samfshalcnv_aerosols( im, ix, km, itc, ntc, ntr, delt, cnvflg, 
-                              kb, kmax, kbcon, ktcon, fscav, xmb, c0t, 
-                              eta, zi, xlamue, xlamud, delp, qtr, qaero,
-                              origin=origin, domain=domain )
-    
-########################################################################
-
-
-######################### FROM LINES 1514-1806 #########################
-# For the "feedback control", calculate updated values of the state 
-# variables by multiplying the cloud base mass flux and the tendencies 
-# calculated per unit cloud base mass flux from the static control
-########################################################################
-
-    # For the "feedback control", calculate updated values of the state 
-    # variables by multiplying the cloud base mass flux and the 
-    # tendencies calculated per unit cloud base mass flux from the 
-    # static control
-    feedback_control_update( dt2, g, evfact, evfactl, el2orc, elocp, 
-                             cnvflg, k_idx, kmax, kb, ktcon, flg, 
-                             islimsk, ktop, kbot, kbcon, kcnv, qeso, 
-                             pfld, delhbar, delqbar, deltbar, delubar, 
-                             delvbar, qcond, dellah, dellaq, t1, xmb, 
-                             q1, u1, dellau, v1, dellav, del0, rntot, 
-                             delqev, delq2, pwo, deltv, delq, qevap, rn, 
-                             edt, cnvw, cnvwt, cnvc, ud_mf, dt_mf,
-                             origin=origin, domain=domain )
-    
-    # Tracers loop                     
-    for n in range(0, ntr):
-        
-        # Use qtr_shift already defined at the beginning of the ntr 
-        # tracers loop (see alternative above)
-        # ~ kk = n+2
-        # ~ qtr_shift = gt.storage.from_array(slice_to_3d(qtr[:, :, kk]), BACKEND, default_origin)
-        
-        # Calculate updated values of the state variables (tracers part)
-        feedback_control_upd_trr( dt2,
-                                  g,
-                                  cnvflg,
-                                  k_idx,
-                                  kmax,
-                                  ktcon,
-                                  delebar,
-                                  ctr,
-                                  dellae,
-                                  xmb,
-                                  qtr_shift, 
-                                  origin=origin,
-                                  domain=domain )
-                                  
-        # UPDATE QTR BASED ON RESULTS IN THE SLICE QTR_SHIFT!
-        
-        # UPDATE OTHER TRACERS' FIELDS BASED ON THE RESULTS IN THE 
-        # SLICES!
-    
-    # Separate detrained cloud water into liquid and ice species as a 
-    # function of temperature only
-    if ncloud > 0:
-        
-        qtr_0 = gt.storage.from_array(slice_to_3d(qtr[:, :, 0]), BACKEND, default_origin)
-        qtr_1 = gt.storage.from_array(slice_to_3d(qtr[:, :, 1]), BACKEND, default_origin)
-        
-        separate_detrained_cw( dt2,
-                               tcr,
-                               tcrf,
-                               cnvflg,
-                               k_idx,
-                               kbcon,
-                               ktcon,
-                               dellal,
-                               xmb,
-                               t1,
-                               qtr_1,
-                               qtr_0,
-                               origin=origin,
-                               domain=domain )
-        
-        # UPDATE QTR BASED ON RESULTS IN THE SLICE QTR_0 AND QTR_1!
-    
-    if do_aerosols: 
-           
-        # Tracers loop (aerosols)
-        for n in range(0, ntc):
-            
-            kk = n + itc - 1
-            
-            qtr_shift = gt.storage.from_array(slice_to_3d(qtr[:, :, kk]), BACKEND, default_origin)
-            
-            # Store aerosol concentrations if present                           
-            store_aero_conc( cnvflg,
-                             k_idx,
-                             kmax,
-                             rn,
-                             qtr_shift,
-                             qaero,
-                             origin=origin,
-                             domain=domain )
-                             
-            # UPDATE QTR BASED ON RESULTS IN THE SLICE QTR_SHIFT!
-            
-            # UPDATE OTHER TRACERS' FIELDS BASED ON THE RESULTS IN THE 
-            # SLICES!
-            
-    # Include TKE contribution from shallow convection
-    if ntk > 0:
-        
-        qtr_ntk = gt.storage.from_array(slice_to_3d(qtr[:, :, ntk]), BACKEND, default_origin)
-        
-        tke_contribution( betaw,
-                          cnvflg,
-                          k_idx,
-                          kb,
-                          ktop,
-                          eta,
-                          xmb,
-                          pfld,
-                          t1, 
-                          sigmagfm,
-                          qtr_ntk,
-                          origin=origin,
-                          domain=domain )
-        
-        # UPDATE QTR BASED ON RESULTS IN THE SLICE QTR_SHIFT!
-
-########################################################################
-
-
+if __name__ == "__main__":
+    test_part1()
