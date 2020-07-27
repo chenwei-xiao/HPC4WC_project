@@ -90,7 +90,7 @@ def samfshalcnv(data_dict):
     tkemean    = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
     clamt      = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
     ps         = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
-    del        = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    del0        = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
     prsl       = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
     umean      = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
     tauadv     = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
@@ -216,7 +216,7 @@ def samfshalcnv(data_dict):
               delp,
               ps,
               prsl,
-              del,
+              del0,
               origin=origin,
               domain=domain )
     
@@ -334,7 +334,7 @@ def samfshalcnv(data_dict):
     # mass flux) and the cloud base mass flux
     comp_tendencies( g, betaw, dtmin, dt2, dtmax, dxcrt, cnvflg, k_idx,
                      kmax, kb, ktcon, ktcon1, kbcon1, kbcon, dellah,
-                     dellaq, dellau, dellav, del, zi, zi_ktcon1,
+                     dellaq, dellau, dellav, del0, zi, zi_ktcon1,
                      zi_kbcon1, heo, qo, xlamue, xlamud, eta, hcko,
                      qrcko, uo, ucko, vo, vcko, qcko, dellal, 
                      qlko_ktcon, wc, gdx, dtconv, u1, v1, po, to, 
@@ -353,7 +353,7 @@ def samfshalcnv(data_dict):
                             kb, 
                             ktcon, 
                             dellae, 
-                            del, 
+                            del0, 
                             eta, 
                             ctro, 
                             ecko, 
@@ -389,7 +389,7 @@ def samfshalcnv(data_dict):
                              islimsk, ktop, kbot, kbcon, kcnv, qeso, 
                              pfld, delhbar, delqbar, deltbar, delubar, 
                              delvbar, qcond, dellah, dellaq, t1, xmb, 
-                             q1, u1, dellau, v1, dellav, del, rntot, 
+                             q1, u1, dellau, v1, dellav, del0, rntot, 
                              delqev, delq2, pwo, deltv, delq, qevap, rn, 
                              edt, cnvw, cnvwt, cnvc, ud_mf, dt_mf,
                              origin=origin, domain=domain )
@@ -497,14 +497,14 @@ def samfshalcnv(data_dict):
 ############################### STENCILS ###############################
 # All the gtscript stencil used in this file
 ########################################################################
-
+## pass
 @gtscript.stencil(backend=BACKEND, rebuild=REBUILD)
 def pa_to_cb( psp  : FIELD_FLOAT, 
               prslp: FIELD_FLOAT,
               delp : FIELD_FLOAT,
               ps   : FIELD_FLOAT,
               prsl : FIELD_FLOAT,
-              del  : FIELD_FLOAT ):
+              del0  : FIELD_FLOAT ):
     
     from __gtscript__ import PARALLEL, computation, interval
     
@@ -513,9 +513,9 @@ def pa_to_cb( psp  : FIELD_FLOAT,
         # Convert input Pa terms to Cb terms
         ps   = psp   * 0.001
         prsl = prslp * 0.001
-        del  = delp  * 0.001
+        del0  = delp  * 0.001
         
-
+## pass
 @gtscript.stencil(backend=BACKEND, rebuild=REBUILD, externals={"sqrt": sqrt})
 def init_col_arr( km    : DTYPE_INT,
                   kcnv  : FIELD_INT, 
@@ -547,7 +547,7 @@ def init_col_arr( km    : DTYPE_INT,
         kb    = km
         gdx   = sqrt(garea)
 
-
+## pass
 @gtscript.stencil(backend=BACKEND, rebuild=REBUILD, externals={"exp": exp})
 def init_par_and_arr( c0s    : DTYPE_FLOAT,
                       asolfac: DTYPE_FLOAT,
@@ -578,8 +578,9 @@ def init_par_and_arr( c0s    : DTYPE_FLOAT,
         if t1 > 273.16:
             c0t = c0
         else:
-            tem = exp(d0 * (t1 - 273.16))    # Cannot use functions in conditionals?
-            c0t = c0 * tem
+            # tem = exp(d0 * (t1 - 273.16))    # Cannot use functions in conditionals?
+            # c0t = c0 * tem
+            c0t = c0 * 2.718281828459045235360287471352**(d0 * (t1 - 273.16)) 
             
         # Initialize convective cloud water and cloud cover to zero
         cnvw = 0.0
@@ -590,6 +591,7 @@ def init_par_and_arr( c0s    : DTYPE_FLOAT,
         dt_mf = 0.0
 
 
+## ipython error + fpvs need modified(cannot use temporary var)
 @gtscript.stencil(backend=BACKEND, rebuild=REBUILD, externals={"min": min, "max": max, "fpvs": fpvs})
 def init_final( km    : DTYPE_INT,
                 kbm   : FIELD_INT,
@@ -603,6 +605,7 @@ def init_final( km    : DTYPE_INT,
                 prsl  : FIELD_FLOAT,
                 zo    : FIELD_FLOAT,
                 phil  : FIELD_FLOAT,
+                g     : FIELD_FLOAT,
                 zi    : FIELD_FLOAT,
                 pfld  : FIELD_FLOAT,
                 eta   : FIELD_FLOAT,
@@ -624,7 +627,19 @@ def init_final( km    : DTYPE_INT,
                 cnvwt : FIELD_FLOAT,
                 qeso  : FIELD_FLOAT,
                 heo   : FIELD_FLOAT,
-                heso  : FIELD_FLOAT ):
+                heso  : FIELD_FLOAT,
+                hpbl  : FIELD_FLOAT,
+                t1    : FIELD_FLOAT,
+                q1    : FIELD_FLOAT,
+                u1    : FIELD_FLOAT,
+                v1    : FIELD_FLOAT,
+                eps   : FIELD_FLOAT,
+                epsm1 : FIELD_FLOAT,
+                cp    : FIELD_FLOAT,
+                hvap  : FIELD_FLOAT,
+                tem   : FIELD_FLOAT,
+                fpvsto: FIELD_FLOAT # to store fpvs(to)
+              ):
     
     from __gtscript__ import PARALLEL, FORWARD, BACKWARD, computation, interval
     from __externals__ import min, max, fpvs
@@ -637,8 +652,8 @@ def init_final( km    : DTYPE_INT,
         kmax = km
         tx1  = 1.0/ps
         
-        if prsl * tx1(i) > 0.7: kbm  = k_idx + 1
-        if prsl * tx1(i) > 0.6: kmax = k_idx + 1
+        if prsl * tx1 > 0.7: kbm  = k_idx + 1
+        if prsl * tx1 > 0.6: kmax = k_idx + 1
         
         kbm = min(kbm, kmax)
         
@@ -659,22 +674,22 @@ def init_final( km    : DTYPE_INT,
         # Find the index for the PBL top using the PBL height; enforce 
         # that it is lower than the maximum parcel starting level
         if flg[0, 0, -1] and (zo <= hpbl):
-            kbpl = k_idx
+            kpbl = k_idx
             flg  = flg[0, 0, -1]
         else:
-            kbpl = kbpl[0, 0, -1]
+            kpbl = kpbl[0, 0, -1]
             flg  = False
         
     with computation(BACKWARD),interval(1,-1):
         
         # Propagate results back to update whole field
-        kbpl = kbpl[0, 0, 1]
+        kpbl = kpbl[0, 0, 1]
         flg  = flg[0, 0, 1]
         
     with computation(PARALLEL), interval(...):
         
         kpbl = min(kpbl, kbm)
-        
+        fpvsto = fpvs(t1)
         if cnvflg == 1 and k_idx <= kmax:
             
             # Convert prsl from centibar to millibar, set normalized mass 
@@ -701,11 +716,11 @@ def init_final( km    : DTYPE_INT,
             
             # Calculate saturation specific humidity and enforce minimum 
             # moisture values
-            qeso = (0.01 * eps * fpvs(to))/(pfld + epsm1 * qeso)    # fpsv is a function (can't be called inside conditional), also how to access lookup table?
-            val1 = 1.0e-8
-            val2 = 1.0e-10
-            qeso = max(qeso, val1 )
-            qo   = max(qo  , val2)
+            qeso = (0.01 * eps * fpvsto)/(pfld + epsm1 * qeso)    # fpsv is a function (can't be called inside conditional), also how to access lookup table? # to use a field
+            # val1 = 1.0e-8
+            # val2 = 1.0e-10
+            qeso = qeso if (qeso > 1.0e-8) else 1.0e-8 #max(qeso, 1.0e-8) cannot call
+            qo   = qo if (qo > 1.0e-10) else 1.0e-10 #max(qo , 1.0e-10) cannot call
             
             # Calculate moist static energy (heo) and saturation moist 
             # static energy (heso)
@@ -714,7 +729,7 @@ def init_final( km    : DTYPE_INT,
             heso = tem + hvap * qeso
             
 
-
+## pass
 @gtscript.stencil(backend=BACKEND, rebuild=REBUILD)
 def init_tracers( cnvflg: FIELD_INT,
                   k_idx : FIELD_INT,
@@ -733,8 +748,8 @@ def init_tracers( cnvflg: FIELD_INT,
             ctr  = qtr
             ctro = qtr
             ecko = 0.0
-            
 
+## pass          
 @gtscript.stencil(backend=BACKEND, rebuild=REBUILD, externals={"min": min, "max": max, "sqrt": sqrt})
 def comp_tendencies( g         : DTYPE_FLOAT,
                      betaw     : DTYPE_FLOAT,
@@ -754,7 +769,7 @@ def comp_tendencies( g         : DTYPE_FLOAT,
                      dellaq    : FIELD_FLOAT,
                      dellau    : FIELD_FLOAT,
                      dellav    : FIELD_FLOAT,
-                     del       : FIELD_FLOAT,
+                     del0       : FIELD_FLOAT,
                      zi        : FIELD_FLOAT,
                      zi_ktcon1 : FIELD_FLOAT,
                      zi_kbcon1 : FIELD_FLOAT,
@@ -784,7 +799,27 @@ def comp_tendencies( g         : DTYPE_FLOAT,
                      sigmagfm  : FIELD_FLOAT,
                      garea     : FIELD_FLOAT,
                      scaldfunc : FIELD_FLOAT,
-                     xmbmax    : FIELD_FLOAT ):
+                     xmbmax    : FIELD_FLOAT,
+                     rd        : FIELD_FLOAT,
+                     tem       : FIELD_FLOAT,
+                    tem1      : FIELD_FLOAT,
+                    tem2       : FIELD_FLOAT,
+                    dp : FIELD_FLOAT,
+                    dz : FIELD_FLOAT,
+                    gdp : FIELD_FLOAT,
+                    dv1h: FIELD_FLOAT,
+                    dv2h: FIELD_FLOAT,
+                    dv3h: FIELD_FLOAT,
+                    dv1q: FIELD_FLOAT,
+                    dv2q: FIELD_FLOAT,
+                    dv3q: FIELD_FLOAT,
+                    eta_curr: FIELD_FLOAT,
+                    eta_prev: FIELD_FLOAT,
+                    tfac: FIELD_FLOAT,
+                    sumx: FIELD_FLOAT,
+                    umean: FIELD_FLOAT,
+                    rho: FIELD_FLOAT
+                   ):
     
     from __gtscript__ import PARALLEL, FORWARD, BACKWARD, computation, interval
     from __externals__ import min, max, sqrt
@@ -827,7 +862,7 @@ def comp_tendencies( g         : DTYPE_FLOAT,
         # Changes due to subsidence and entrainment
         if cnvflg == 1 and k_idx > kb and k_idx < ktcon:
                 
-            dp  = 1000.0 * del
+            dp  = 1000.0 * del0
             dz  = zi[0, 0, 0] - zi[0, 0, -1]
             gdp = g/dp
             
@@ -872,7 +907,7 @@ def comp_tendencies( g         : DTYPE_FLOAT,
             
             if ktcon == k_idx:
                 
-                dp   = 1000.0 * del
+                dp   = 1000.0 * del0
                 gdp  = g/dp
                 
                 dv1h   = heo[0, 0, -1]
@@ -895,9 +930,9 @@ def comp_tendencies( g         : DTYPE_FLOAT,
             
             tfac   = 1.0 + gdx/75000.0
             dtconv = tfac * tem/wc
-            dtconv = max(dtconv, dtmin)
-            dtconv = max(dtconv, dt2)
-            dtconv = min(dtconv, dtmax)
+            dtconv = dtconv if(dtconv > dtmin) else dtmin #max(dtconv, dtmin)
+            dtconv = dtconv if(dtconv > dt2) else dt2 #max(dtconv, dt2)
+            dtconv = dtconv if(dtconv < dtmax) else dtmax #min(dtconv, dtmax)
             
             # Initialize field for advective time scale computation
             sumx  = 0.0
@@ -910,7 +945,7 @@ def comp_tendencies( g         : DTYPE_FLOAT,
         if cnvflg == 1:
             if k_idx >= kbcon1 and k_idx < ktcon1:
                 dz    = zi[0, 0, 0] - zi[0, 0, -1]
-                tem   = sqrt(u1*u1 + v1*v1)
+                tem   = (u1*u1 + v1*v1)**0.5
                 umean = umean[0, 0, -1] + tem * dz
                 sumx  = sumx [0, 0, -1] + dz
             else:
@@ -919,18 +954,17 @@ def comp_tendencies( g         : DTYPE_FLOAT,
      
      # Calculate advective time scale (tauadv) using a mean cloud layer 
      # wind speed (propagate backward)           
-     with computation(BACKWARD), interval(1, -2):
-         
-         if cnvflg == 1:
-             umean = umean[0, 0, 1]
-             sumx  = sumx [0, 0, 1]
+    with computation(BACKWARD), interval(1, -2):
+        if cnvflg == 1:
+            umean = umean[0, 0, 1]
+            sumx  = sumx [0, 0, 1]
             
     with computation(PARALLEL), interval(...):
         
         if cnvflg == 1:
             umean  = umean/sumx
-            val    = 1.0
-            umean  = max(umean, val)  # Passing literals (e.g. 1.0) to functions might cause errors in conditional statements
+            #val    = 1.0
+            umean  = umean if(umean > 1.0) else 1.0  # Passing literals (e.g. 1.0) to functions might cause errors in conditional statements
             tauadv = gdx/umean
             
             if k_idx == kbcon:
@@ -940,8 +974,8 @@ def comp_tendencies( g         : DTYPE_FLOAT,
                 # mean updraft velocity
                 rho  = po * 100.0 / (rd * to)
                 tfac = tauadv/dtconv
-                val  = 1.0
-                tfac = min(tfac, val)  # Same as above: literals
+                #val  = 1.0
+                tfac = tfac if(tfac<1.0) else 1.0 #min(tfac, 1.0)  # Same as above: literals
                 xmb  = tfac * betaw * rho * wc
                 
                 # For scale-aware parameterization, the updraft fraction 
@@ -950,17 +984,19 @@ def comp_tendencies( g         : DTYPE_FLOAT,
                 # al.'s (2017) \cite han_et_al_2017 equation 4 and 5), 
                 # following the study by Grell and Freitas (2014) \cite 
                 # grell_and_freitus_2014
-                val1 = 2.0e-4
-                val2 = 6.0e-4
-                tem  = max(xlamue, val1)
-                tem  = 0.2/min(tem, val2)
+                #val1 = 2.0e-4
+                #val2 = 6.0e-4
+                tem  = xlamue if(xlamue > 2.0e-4) else 2.0e-4 #max(xlamue, 2.0e-4)
+                #tem  = 0.2/min(tem, 6.0e-4)
+                tem = tem if(xlamue < 6.0e-4) else 6.0e-4
+                tem = 0.2/tem
                 tem1 = 3.14 * tem * tem
                 
                 sigmagfm = tem1/garea
-                val3     = 0.001
-                val4     = 0.999
-                sigmagfm = max(sigmagfm, val3)
-                sigmagfm = min(sigmagfm, val4)
+                #val3     = 0.001
+                #val4     = 0.999
+                sigmagfm = sigmagfm if(sigmagfm > 0.001) else 0.001 #max(sigmagfm, 0.001)
+                sigmagfm = sigmagfm if(sigmagfm > 0.999) else 0.999 #min(sigmagfm, 0.999)
             
             # Then, calculate the reduction factor (scaldfunc) of the 
             # vertical convective eddy transport of mass flux as a 
@@ -973,17 +1009,17 @@ def comp_tendencies( g         : DTYPE_FLOAT,
             # al.'s (2017) \cite han_et_al_2017 equation 2).
             if gdx < dxcrt:
                 scaldfunc = (1.0 - sigmagfm) * (1.0 - sigmagfm)
-                val1      = 1.0
-                val2      = 0.0
-                scaldfunc = min(scaldfunc, val1)
-                scaldfunc = max(scaldfunc, val2)
+                #val1      = 1.0
+                #val2      = 0.0
+                scaldfunc = scaldfunc if(scaldfunc < 1.) else 1. #min(scaldfunc, 1.0)
+                scaldfunc = scaldfunc if(scaldfunc > 0.) else 0. #max(scaldfunc, 0.0)
             else:
                 scaldfunc = 1.0
             
             xmb = xmb * scaldfunc
-            xmb = min(xmb, xmbmax)
+            xmb = xmb if(xmb < xmbmax) else xmbmax #min(xmb, xmbmax)
 
-
+## pass
 @gtscript.stencil(backend=BACKEND, rebuild=REBUILD)
 def comp_tendencies_tr( g      : DTYPE_FLOAT,
                         cnvflg : FIELD_INT,
@@ -992,10 +1028,14 @@ def comp_tendencies_tr( g      : DTYPE_FLOAT,
                         kb     : FIELD_INT,
                         ktcon  : FIELD_INT,
                         dellae : FIELD_FLOAT,
-                        del    : FIELD_FLOAT,
+                        del0    : FIELD_FLOAT,
                         eta    : FIELD_FLOAT,
                         ctro   : FIELD_FLOAT,
-                        ecko   : FIELD_FLOAT ):
+                        ecko   : FIELD_FLOAT,
+                       dp: FIELD_FLOAT,
+                       tem1: FIELD_FLOAT,
+                       tem2: FIELD_FLOAT,
+                      ):
     
     from __gtscript__ import PARALLEL, computation, interval
     
@@ -1010,7 +1050,7 @@ def comp_tendencies_tr( g      : DTYPE_FLOAT,
         if cnvflg == 1 and k_idx > kb and k_idx < ktcon:
             
             # Changes due to subsidence and entrainment
-            dp = 1000.0 * del
+            dp = 1000.0 * del0
             
             tem1 = eta[0, 0,  0] * (ctro[0, 0,  0] - ecko[0, 0,  0])
             tem2 = eta[0, 0, -1] * (ctro[0, 0, -1] - ecko[0, 0, -1])
@@ -1023,10 +1063,10 @@ def comp_tendencies_tr( g      : DTYPE_FLOAT,
         if cnvflg == 1:
             if ktcon == k_idx:
                 
-                dp = 1000.0 * del
+                dp = 1000.0 * del0
                 
                 dellae = eta[0, 0, -1] * (ecko[0, 0, -1] - ctro[0, 0, -1]) * g/dp
-            
+
 
 @gtscript.stencil(backend=BACKEND, rebuild=REBUILD, externals={"fpvs": fpvs, "min": min, "max": max})
 def feedback_control_update( dt2    : DTYPE_FLOAT,
@@ -1063,7 +1103,7 @@ def feedback_control_update( dt2    : DTYPE_FLOAT,
                              dellau : FIELD_FLOAT,
                              v1     : FIELD_FLOAT,
                              dellav : FIELD_FLOAT,
-                             del    : FIELD_FLOAT,
+                             del0    : FIELD_FLOAT,
                              rntot  : FIELD_FLOAT,
                              delqev : FIELD_FLOAT,
                              delq2  : FIELD_FLOAT,
@@ -1122,7 +1162,7 @@ def feedback_control_update( dt2    : DTYPE_FLOAT,
             
             if cnvflg == 1 and k_idx > kb and k_idx <= ktcon:
                 
-                    dp  = 1000.0 * del
+                    dp  = 1000.0 * del0
                     dpg = dp/g
                     
                     delhbar = delhbar + dellah * xmb * dpg
@@ -1136,7 +1176,7 @@ def feedback_control_update( dt2    : DTYPE_FLOAT,
             if cnvflg == 1:
                 if k_idx > kb and k_idx <= ktcon:
                 
-                    dp  = 1000.0 * del
+                    dp  = 1000.0 * del0
                     dpg = dp/g
                     
                     delhbar = delhbar[0, 0, -1] + dellah * xmb * dpg
@@ -1242,7 +1282,7 @@ def feedback_control_update( dt2    : DTYPE_FLOAT,
             if k_idx == ktop - 1:
                 dt_mf = ud_mf
                 
-
+## pass
 @gtscript.stencil(backend=BACKEND, rebuild=REBUILD)
 def feedback_control_upd_trr( dt2    : DTYPE_FLOAT,
                               g      : DTYPE_FLOAT,
@@ -1254,11 +1294,14 @@ def feedback_control_upd_trr( dt2    : DTYPE_FLOAT,
                               ctr    : FIELD_FLOAT,
                               dellae : FIELD_FLOAT,
                               xmb    : FIELD_FLOAT,
-                              qtr    : FIELD_FLOAT ):
+                              qtr    : FIELD_FLOAT,
+                             dp:  FIELD_FLOAT,
+                             kcon: FIELD_FLOAT
+                            ):
                                   
     from __gtscript__ import PARALLEL, FORWARD, BACKWARD, computation, interval 
     
-    with computation(PARALLEL), interval(...)
+    with computation(PARALLEL), interval(...):
         delebar = 0.0
         
         if cnvflg == 1 and k_idx <= kmax and k_idx <= ktcon:
@@ -1288,7 +1331,7 @@ def feedback_control_upd_trr( dt2    : DTYPE_FLOAT,
         if cnvflg == 1:
             delebar = delebar[0, 0, 1]
         
-
+## pass
 @gtscript.stencil(backend=BACKEND, rebuild=REBUILD)
 def store_aero_conc( cnvflg: FIELD_INT,
                      k_idx : FIELD_INT,
@@ -1302,10 +1345,10 @@ def store_aero_conc( cnvflg: FIELD_INT,
     with computation(PARALLEL), interval(...):
         
         # Store aerosol concentrations if present
-        if cnvflg == 1 and rn > 0.0 and k <= kmax:
+        if cnvflg == 1 and rn > 0.0 and k_idx <= kmax:
             qtr = qaero
             
-
+## pass
 @gtscript.stencil(backend=BACKEND, rebuild=REBUILD, externals={"max": max, "min": min})
 def separate_detrained_cw( dt2   : DTYPE_FLOAT,
                            tcr   : DTYPE_FLOAT,
@@ -1318,7 +1361,10 @@ def separate_detrained_cw( dt2   : DTYPE_FLOAT,
                            xmb   : FIELD_FLOAT,
                            t1    : FIELD_FLOAT,
                            qtr_1 : FIELD_FLOAT,
-                           qtr_0 : FIELD_FLOAT ):
+                           qtr_0 : FIELD_FLOAT,
+                          tem: FIELD_FLOAT,
+                          tem1: FIELD_FLOAT
+                         ):
                                
     from __gtscript__ import PARALLEL, computation, interval 
     
@@ -1329,17 +1375,18 @@ def separate_detrained_cw( dt2   : DTYPE_FLOAT,
         if cnvflg == 1 and k_idx >= kbcon and k_idx <= ktcon:
             
             tem  = dellal * xmb * dt2
-            val1 = 1.0
-            val2 = 0.0
-            tem1 = min(val1, (tcr - t1) * tcrf)
-            tem1 = max(val2, tem1)
+            # val1 = 1.0
+            # val2 = 0.0
+            tem1 = (tcr - t1) * tcrf if(((tcr - t1) * tcrf)<1.0) else 1.0 #min(val1, (tcr - t1) * tcrf)
+            tem1 = tem1 if(tem1 > 0.0) else 0.0 #max(val2, tem1)
             
             if qtr_1 > -999.0:
                 qtr_0 = qtr_0 + tem * tem1
                 qtr_1 = qtr_1 + tem * (1.0 - tem1)
             else:
                 qtr_0 = qtr_0 + tem
-                
+                               
+
 
 @gtscript.stencil(backend=BACKEND, rebuild=REBUILD, externals={"max": max})
 def tke_contribution( betaw   : DTYPE_FLOAT,
@@ -1352,18 +1399,23 @@ def tke_contribution( betaw   : DTYPE_FLOAT,
                       pfld    : FIELD_FLOAT,
                       t1      : FIELD_FLOAT, 
                       sigmagfm: FIELD_FLOAT,
-                      qtr_ntk : FIELD_FLOAT ):
+                      qtr_ntk : FIELD_FLOAT,
+                     rd: FIELD_FLOAT,
+                     tem: FIELD_FLOAT,
+                     tem1: FIELD_FLOAT,
+                     ptem: FIELD_FLOAT
+                    ):
                           
     from __gtscript__ import PARALLEL, computation, interval 
     
     with computation(PARALLEL), interval(1, -1):
         
         # Include TKE contribution from shallow convection
-        if cnvflg == 1 and k_idx > kb and k < ktop:
+        if cnvflg == 1 and k_idx > kb and k_idx < ktop:
             
             tem      = 0.5 * (eta[0, 0, -1] + eta[0, 0, 0]) * xmb
             tem1     = pfld * 100.0/(rd * t1)
-            sigmagfm = max(sigmagfm, betaw)
+            sigmagfm = sigmagfm if(sigmagfm > betaw) else betaw #max(sigmagfm, betaw)
             ptem     = tem/(sigmagfm * tem1)
             qtr_ntk  = qtr_ntk + 0.5 * sigmagfm * ptem * ptem
 
@@ -1382,7 +1434,7 @@ def sqrt(x):
 
 @gtscript.function
 def exp(x):
-    return e**x
+    return 2.718281828459045235360287471352**x
         
 
 @gtscript.function
