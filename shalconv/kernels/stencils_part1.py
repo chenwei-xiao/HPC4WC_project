@@ -8,15 +8,8 @@ from shalconv.physcons import (
     con_g     as g,
     con_cp    as cp,
     con_hvap  as hvap,
-    con_rv    as rv,
-    con_fvirt as fv,
-    con_t0c   as t0c,
-    con_rd    as rd,
-    con_cvap  as cvap,
-    con_cliq  as cliq,
     con_eps   as eps,
-    con_epsm1 as epsm1,
-    con_e     as e
+    con_epsm1 as epsm1
 )
 
 @gtscript.stencil(backend=BACKEND, rebuild=REBUILD)

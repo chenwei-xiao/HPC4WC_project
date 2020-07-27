@@ -1,5 +1,20 @@
 import gt4py as gt
 from gt4py import gtscript
+from gt4py.__gtscript__ import PARALLEL, FORWARD, BACKWARD, computation, interval
+from shalconv.funcphys import fpvsx_gt as fpvs
+from shalconv.physcons import (
+    con_g     as g,
+    con_cp    as cp,
+    con_hvap  as hvap,
+    con_rv    as rv,
+    con_fvirt as fv,
+    con_t0c   as t0c,
+    con_rd    as rd,
+    con_cvap  as cvap,
+    con_cliq  as cliq,
+    con_eps   as eps,
+    con_epsm1 as epsm1
+)
 from .utils import *
 from . import *
 
@@ -22,7 +37,7 @@ def comp_tendencies( g         : DTYPE_FLOAT,
                      dellaq    : FIELD_FLOAT,
                      dellau    : FIELD_FLOAT,
                      dellav    : FIELD_FLOAT,
-                     del0       : FIELD_FLOAT,
+                     del0      : FIELD_FLOAT,
                      zi        : FIELD_FLOAT,
                      zi_ktcon1 : FIELD_FLOAT,
                      zi_kbcon1 : FIELD_FLOAT,
@@ -52,10 +67,9 @@ def comp_tendencies( g         : DTYPE_FLOAT,
                      sigmagfm  : FIELD_FLOAT,
                      garea     : FIELD_FLOAT,
                      scaldfunc : FIELD_FLOAT,
-                     xmbmax    : FIELD_FLOAT ):
-    
-    from __gtscript__ import PARALLEL, FORWARD, BACKWARD, computation, interval
-    from __externals__ import min, max, sqrt
+                     xmbmax    : FIELD_FLOAT,
+                     sumx      : FIELD_FLOAT,
+                     umean     : FIELD_FLOAT):
     
     # Calculate the change in moist static energy, moisture 
     # mixing ratio, and horizontal winds per unit cloud base mass 
@@ -163,9 +177,9 @@ def comp_tendencies( g         : DTYPE_FLOAT,
             
             tfac   = 1.0 + gdx/75000.0
             dtconv = tfac * tem/wc
-            dtconv = max(dtconv, dtmin)
-            dtconv = max(dtconv, dt2)
-            dtconv = min(dtconv, dtmax)
+            dtconv = dtconv if(dtconv > dtmin) else dtmin #max(dtconv, dtmin)
+            dtconv = dtconv if(dtconv > dt2) else dt2     #max(dtconv, dt2)
+            dtconv = dtconv if(dtconv < dtmax) else dtmax #min(dtconv, dtmax)
             
             # Initialize field for advective time scale computation
             sumx  = 0.0
@@ -178,7 +192,7 @@ def comp_tendencies( g         : DTYPE_FLOAT,
         if cnvflg == 1:
             if k_idx >= kbcon1 and k_idx < ktcon1:
                 dz    = zi[0, 0, 0] - zi[0, 0, -1]
-                tem   = sqrt(u1*u1 + v1*v1)
+                tem   = (u1*u1 + v1*v1)**0.5 #sqrt(u1*u1 + v1*v1)
                 umean = umean[0, 0, -1] + tem * dz
                 sumx  = sumx [0, 0, -1] + dz
             else:
@@ -187,8 +201,7 @@ def comp_tendencies( g         : DTYPE_FLOAT,
      
      # Calculate advective time scale (tauadv) using a mean cloud layer 
      # wind speed (propagate backward)           
-     with computation(BACKWARD), interval(1, -2):
-         
+    with computation(BACKWARD), interval(1, -2):
          if cnvflg == 1:
              umean = umean[0, 0, 1]
              sumx  = sumx [0, 0, 1]
@@ -197,8 +210,7 @@ def comp_tendencies( g         : DTYPE_FLOAT,
         
         if cnvflg == 1:
             umean  = umean/sumx
-            val    = 1.0
-            umean  = max(umean, val)  # Passing literals (e.g. 1.0) to functions might cause errors in conditional statements
+            umean  = umean if(umean > 1.0) else 1.0 #max(umean, val)  # Passing literals (e.g. 1.0) to functions might cause errors in conditional statements
             tauadv = gdx/umean
             
             if k_idx == kbcon:
@@ -208,8 +220,7 @@ def comp_tendencies( g         : DTYPE_FLOAT,
                 # mean updraft velocity
                 rho  = po * 100.0 / (rd * to)
                 tfac = tauadv/dtconv
-                val  = 1.0
-                tfac = min(tfac, val)  # Same as above: literals
+                tfac = tfac if(tfac<1.0) else 1.0 #min(tfac, val)  # Same as above: literals
                 xmb  = tfac * betaw * rho * wc
                 
                 # For scale-aware parameterization, the updraft fraction 
@@ -218,17 +229,14 @@ def comp_tendencies( g         : DTYPE_FLOAT,
                 # al.'s (2017) \cite han_et_al_2017 equation 4 and 5), 
                 # following the study by Grell and Freitas (2014) \cite 
                 # grell_and_freitus_2014
-                val1 = 2.0e-4
-                val2 = 6.0e-4
-                tem  = max(xlamue, val1)
-                tem  = 0.2/min(tem, val2)
+                tem  = xlamue if(xlamue > 2.0e-4) else 2.0e-4 #max(xlamue, 2.0e-4)
+                tem  = tem if(xlamue < 6.0e-4) else 6.0e-4 #0.2/min(tem, 6.0e-4)
+                tem  = 0.2 / tem
                 tem1 = 3.14 * tem * tem
                 
                 sigmagfm = tem1/garea
-                val3     = 0.001
-                val4     = 0.999
-                sigmagfm = max(sigmagfm, val3)
-                sigmagfm = min(sigmagfm, val4)
+                sigmagfm = sigmagfm if(sigmagfm > 0.001) else 0.001 #max(sigmagfm, 0.001)
+                sigmagfm = sigmagfm if(sigmagfm > 0.999) else 0.999 #min(sigmagfm, 0.999)
             
             # Then, calculate the reduction factor (scaldfunc) of the 
             # vertical convective eddy transport of mass flux as a 
@@ -241,15 +249,13 @@ def comp_tendencies( g         : DTYPE_FLOAT,
             # al.'s (2017) \cite han_et_al_2017 equation 2).
             if gdx < dxcrt:
                 scaldfunc = (1.0 - sigmagfm) * (1.0 - sigmagfm)
-                val1      = 1.0
-                val2      = 0.0
-                scaldfunc = min(scaldfunc, val1)
-                scaldfunc = max(scaldfunc, val2)
+                scaldfunc = scaldfunc if (scaldfunc < 1.) else 1.  # min(scaldfunc, 1.0)
+                scaldfunc = scaldfunc if (scaldfunc > 0.) else 0.  # max(scaldfunc, 0.0)
             else:
                 scaldfunc = 1.0
             
             xmb = xmb * scaldfunc
-            xmb = min(xmb, xmbmax)
+            xmb = xmb if(xmb < xmbmax) else xmbmax #min(xmb, xmbmax)
 
 
 @gtscript.stencil(backend=BACKEND, rebuild=REBUILD)
@@ -260,13 +266,11 @@ def comp_tendencies_tr( g      : DTYPE_FLOAT,
                         kb     : FIELD_INT,
                         ktcon  : FIELD_INT,
                         dellae : FIELD_FLOAT,
-                        del0    : FIELD_FLOAT,
+                        del0   : FIELD_FLOAT,
                         eta    : FIELD_FLOAT,
                         ctro   : FIELD_FLOAT,
-                        ecko   : FIELD_FLOAT ):
-    
-    from __gtscript__ import PARALLEL, computation, interval
-    
+                        ecko   : FIELD_FLOAT):
+
     with computation(PARALLEL), interval(...):
         
         if cnvflg == 1 and k_idx <= kmax:
@@ -345,10 +349,8 @@ def feedback_control_update( dt2    : DTYPE_FLOAT,
                              cnvwt  : FIELD_FLOAT,
                              cnvc   : FIELD_FLOAT,
                              ud_mf  : FIELD_FLOAT,
-                             dt_mf  : FIELD_FLOAT ):
-    
-    from __gtscript__ import PARALLEL, FORWARD, BACKWARD, computation, interval                         
-    from __externals__ import fpvs, min, max
+                             dt_mf  : FIELD_FLOAT,
+                             eta    : FIELD_FLOAT):
     
     with computation(PARALLEL), interval(...):
         
@@ -478,7 +480,7 @@ def feedback_control_update( dt2    : DTYPE_FLOAT,
                 # ~ rn = rn + pwo * xmb * 0.001 * dt2
                 
     
-    with computation(PARALLEL), interval(...)
+    with computation(PARALLEL), interval(...):
         
         if cnvflg == 1:
             
@@ -488,7 +490,7 @@ def feedback_control_update( dt2    : DTYPE_FLOAT,
             kbot = kbcon
             kcnv = 2
             
-            if k_idx >= kbcon and k < ktcon:
+            if k_idx >= kbcon and k_idx < ktcon:
                 
                 # Calculate shallow convective cloud water
                 cnvw = cnvwt * xmb * dt2
@@ -522,11 +524,10 @@ def feedback_control_upd_trr( dt2    : DTYPE_FLOAT,
                               ctr    : FIELD_FLOAT,
                               dellae : FIELD_FLOAT,
                               xmb    : FIELD_FLOAT,
-                              qtr    : FIELD_FLOAT ):
-                                  
-    from __gtscript__ import PARALLEL, FORWARD, BACKWARD, computation, interval 
+                              qtr    : FIELD_FLOAT,
+                              kcon   : FIELD_FLOAT):
     
-    with computation(PARALLEL), interval(...)
+    with computation(PARALLEL), interval(...):
         delebar = 0.0
         
         if cnvflg == 1 and k_idx <= kmax and k_idx <= ktcon:
@@ -564,13 +565,11 @@ def store_aero_conc( cnvflg: FIELD_INT,
                      rn    : FIELD_FLOAT,
                      qtr   : FIELD_FLOAT,
                      qaero : FIELD_FLOAT ):
-                         
-    from __gtscript__ import PARALLEL, computation, interval 
     
     with computation(PARALLEL), interval(...):
         
         # Store aerosol concentrations if present
-        if cnvflg == 1 and rn > 0.0 and k <= kmax:
+        if cnvflg == 1 and rn > 0.0 and k_idx <= kmax:
             qtr = qaero
             
 
@@ -587,8 +586,6 @@ def separate_detrained_cw( dt2   : DTYPE_FLOAT,
                            t1    : FIELD_FLOAT,
                            qtr_1 : FIELD_FLOAT,
                            qtr_0 : FIELD_FLOAT ):
-                               
-    from __gtscript__ import PARALLEL, computation, interval 
     
     with computation(PARALLEL), interval(...):
         
@@ -597,10 +594,8 @@ def separate_detrained_cw( dt2   : DTYPE_FLOAT,
         if cnvflg == 1 and k_idx >= kbcon and k_idx <= ktcon:
             
             tem  = dellal * xmb * dt2
-            val1 = 1.0
-            val2 = 0.0
-            tem1 = min(val1, (tcr - t1) * tcrf)
-            tem1 = max(val2, tem1)
+            tem1 = (tcr - t1) * tcrf if(((tcr - t1) * tcrf)<1.0) else 1.0 #min(1.0, (tcr - t1) * tcrf)
+            tem1 = tem1 if(tem1 > 0.0) else 0.0 #max(0.0, tem1)
             
             if qtr_1 > -999.0:
                 qtr_0 = qtr_0 + tem * tem1
@@ -621,17 +616,15 @@ def tke_contribution( betaw   : DTYPE_FLOAT,
                       t1      : FIELD_FLOAT, 
                       sigmagfm: FIELD_FLOAT,
                       qtr_ntk : FIELD_FLOAT ):
-                          
-    from __gtscript__ import PARALLEL, computation, interval 
     
     with computation(PARALLEL), interval(1, -1):
         
         # Include TKE contribution from shallow convection
-        if cnvflg == 1 and k_idx > kb and k < ktop:
+        if cnvflg == 1 and k_idx > kb and k_idx < ktop:
             
             tem      = 0.5 * (eta[0, 0, -1] + eta[0, 0, 0]) * xmb
             tem1     = pfld * 100.0/(rd * t1)
-            sigmagfm = max(sigmagfm, betaw)
+            sigmagfm = sigmagfm if(sigmagfm > betaw) else betaw #max(sigmagfm, betaw)
             ptem     = tem/(sigmagfm * tem1)
             qtr_ntk  = qtr_ntk + 0.5 * sigmagfm * ptem * ptem
 

@@ -11,3 +11,5 @@
 10. clone `serialbox2` from VulcanClimateModeling
 11. In the right conda env, build `serialbox2`: `cmake -DCMAKE_INSTALL_PREFIX=/usr/local/serialbox -DSERIALBOX_USE_NETCDF=ON -DSERIALBOX_ENABLE_FORTRAN=ON -DSERIALBOX_TESTING=ON -DSERIALBOX_USE_OPENSSL=OFF ..`
 12. best practice for debugging: PyCharm + Docker
+13. `dp`, `tem1`, `tem2`, `dv1h`, `rd` ... are not fields
+14. [TODO] fix temp vars in part3,4
