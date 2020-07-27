@@ -1,5 +1,7 @@
 import gt4py as gt
+from gt4py import gtscript
 import numpy as np
+from . import *
 from shalconv.physcons import (
     con_ttp,
     con_psat,
@@ -8,6 +10,7 @@ from shalconv.physcons import (
     con_xponai,
     con_xponbi
 )
+from shalconv.kernels.utils import exp
 
 
 ### Global variables used in fpvs ###
@@ -18,7 +21,7 @@ c2xpvs = None
 nxpvs    = 7501                  # Size of look-up table
 tbpvs    = np.empty(nxpvs)       # Look-up table stored as a 1D numpy array
 
-tbpvs_gt = gt.storage.from_array(tbpvs, BACKEND, default_origin, dtype=DTYPE_FLOAT)
+tbpvs_gt = gt.storage.from_array(tbpvs, BACKEND, (0,), dtype=DTYPE_FLOAT)
 
 
 # Computes saturation vapor pressure table as a function of temperature 
@@ -72,14 +75,22 @@ def fpvsx_gt(t):
     tr = con_ttp/t
     tliq = con_ttp
     tice = con_ttp - 20.0
-    
+
+    tmp_l = exp(con_xponbl * (1.0 - tr))
+    tmp_r = exp(con_xponbi * (1.0 - tr))
+    tmp_i = exp(con_xponbi * (1.0 - tr))
+    ret = 0.0
+    w = 0.0
+    pvl = 0.0
+    pvi = 0.0
     if t >= tliq:
-        return con_psat * (tr**con_xponal) * exp(con_xponbl * (1.0 - tr))
+        ret = con_psat * (tr**con_xponal) * tmp_l
     elif t < tice:
-        return con_psat * (tr**con_xponai) * exp(con_xponbi * (1.0 - tr))
+        ret = con_psat * (tr**con_xponai) * tmp_r
     else:
         w = (t - tice)/(tliq - tice)
-        pvl = con_psat * (tr**con_xponal) * exp(con_xponbl * (1.0 - tr))
-        pvi = con_psat * (tr**con_xponai) * exp(con_xponbi * (1.0 - tr))
+        pvl = con_psat * (tr**con_xponal) * tmp_l
+        pvi = con_psat * (tr**con_xponai) * tmp_i
         
-        return w * pvl + (1.0 - w) * pvi
+        ret = w * pvl + (1.0 - w) * pvi
+    return ret

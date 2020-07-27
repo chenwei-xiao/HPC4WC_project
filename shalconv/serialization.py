@@ -1,12 +1,15 @@
 import numpy as np
 import gt4py as gt
-from . import BACKEND, DTYPE_FLOAT
+from . import BACKEND, DTYPE_FLOAT, DTYPE_INT
 
+import sys
+SERIALBOX_DIR = "/usr/local/serialbox"
 #SERIALBOX_DIR = "/project/c14/install/daint/serialbox2_master/gnu_debug"
-#sys.path.append(SERIALBOX_DIR + "/python")
+sys.path.append(SERIALBOX_DIR + "/python")
 import serialbox as ser
 
 int_vars = ["im", "ix", "km", "itc", "ntc", "ntk", "ntr", "ncloud"]
+int_arrs = ["kbot", "ktop", "kcnv", "islimsk"]
 
 IN_VARS = ["im", "ix", "km", "itc", "ntc", "ntk", "ntr", "ncloud", \
            "clam", "c0s", "c1", "asolfac", "pgcon", "delt", "islimsk", \
@@ -32,27 +35,28 @@ def numpy_dict_to_gt4py_dict(data_dict, backend = BACKEND):
     3d array is kept the same (numpy arrays), doing slices later
     0d array will be transformed into a scalar
     """
-    ix = data_dict["ix"]#im <= ix
-    km = data_dict["km"]
+    ix = int(data_dict["ix"])#im <= ix
+    km = int(data_dict["km"])
     for var in data_dict:
         data = data_dict[var]
         ndim = len(data.shape)
         #if var == "fscav":
         #    data_dict["fscav"] = data # shape = (number of tracers)
-        if (ndim > 0) and (ndim <= 2):
+        if (ndim > 0) and (ndim <= 2) and (data.size >= 2):
             default_origin = (0, 0, 0)
             arrdata = np.zeros((1,ix,km))
             if ndim == 1: # 1D array (horizontal dimension)
                 arrdata[...] = data[np.newaxis, :, np.newaxis]
             elif ndim == 2: #2D array (horizontal dimension, vertical dimension)
                 arrdata[...] = data[np.newaxis, :, :]
-            data_dict[var] = gt.storage.from_array(arrdata, backend, default_origin, dtype = DTYPE_FLOAT)
-        #elif ndim == 3: #3D array qntr(horizontal dimension, vertical dimension, number of tracers)
-        #    data_dict[var] = data
+            dtype = DTYPE_INT if var in int_arrs else DTYPE_FLOAT
+            data_dict[var] = gt.storage.from_array(arrdata, backend, default_origin, dtype = dtype)
+        elif ndim == 3: #3D array qntr(horizontal dimension, vertical dimension, number of tracers)
+            data_dict[var] = data
         elif var in int_vars:
-            data_dict[var] = int(data)
+            data_dict[var] = DTYPE_INT(data[0])
         else:
-            data_dict[var] = float(data)
+            data_dict[var] = DTYPE_FLOAT(data[0])
     
 def compare_data(exp_data, ref_data):
     assert set(exp_data.keys()) == set(ref_data.keys()), \
@@ -61,7 +65,7 @@ def compare_data(exp_data, ref_data):
         assert np.allclose(exp_data[key], ref_data[key], equal_nan=True), \
             "Data from exp and ref does not match for field " + key
 
-def read_data(tile, is_in):
+def read_data(tile, is_in, path = "./data"):
     """
     Read serialbox2 format data under `./data` folder with prefix of `Generator_rank{tile}`
     :param tile: specify the number of tile in data
@@ -70,7 +74,7 @@ def read_data(tile, is_in):
     :type is_in: boolean
     """
     #TODO: read_async and readbuffer
-    serializer = ser.Serializer(ser.OpenModeKind.Read, "./data", "Generator_rank" + str(tile))
+    serializer = ser.Serializer(ser.OpenModeKind.Read, path, "Generator_rank" + str(tile))
     inoutstr = "in" if is_in else "out"
     sp = [sp for sp in serializer.savepoint_list() if sp.name.startswith("samfshalcnv-"+inoutstr)][0]
     vars = IN_VARS if is_in else OUT_VARS

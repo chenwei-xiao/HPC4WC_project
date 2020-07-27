@@ -4,3 +4,5 @@ data
 *.pyc
 __pycache__
 .pytest_cache
+.gt_cache
+.vscode
