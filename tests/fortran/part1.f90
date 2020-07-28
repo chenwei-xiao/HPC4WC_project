@@ -65,8 +65,8 @@ subroutine part1(im,ix,km,delt,itc,ntc,ntk,ntr,delp, &
      &   prslp(ix,km), garea(im), hpbl(im), dot(ix,km), phil(ix,km)
 !
       real(kind=kind_phys), intent(in) :: fscav(ntc)
-      integer, intent(inout)  :: kcnv(im)
-      real(kind=kind_phys), intent(inout) ::   qtr(ix,km,ntr+2), &
+      integer, intent(in)  :: kcnv(im)
+      real(kind=kind_phys), intent(in) ::   qtr(ix,km,ntr+2), &
      &   q1(ix,km), t1(ix,km), u1(ix,km), v1(ix,km)
 !
       integer :: kbot(im), ktop(im)

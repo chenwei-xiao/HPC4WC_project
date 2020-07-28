@@ -95,6 +95,63 @@ def init_par_and_arr( c0s    : DTYPE_FLOAT,
         ud_mf = 0.0
         dt_mf = 0.0
 
+@gtscript.stencil(backend=BACKEND, rebuild=REBUILD, externals={"min": min, "max": max})
+def init_kbm_kmax(km        : DTYPE_INT,
+                  kbm       : FIELD_INT,
+                  k_idx     : FIELD_INT,
+                  kmax      : FIELD_INT,
+                  state_buf1: FIELD_INT,
+                  state_buf2: FIELD_INT,
+                  tx1       : FIELD_FLOAT,
+                  ps        : FIELD_FLOAT,
+                  prsl      : FIELD_FLOAT):
+    with computation(FORWARD):
+        # Determine maximum indices for the parcel starting point (kbm)
+        # and cloud top (kmax)
+        with interval(0, 1):
+            tx1 = 1.0/ps
+            if prsl * tx1 > 0.7:
+                kbm = k_idx + 1
+                state_buf1 = 1
+            else:
+                kbm = km
+                state_buf1 = 0 # means kbm is set to default `km`
+        with interval(1, None):
+            tx1 = 1.0 / ps
+            if prsl * tx1 > 0.7:
+                kbm = k_idx + 1
+                state_buf1 = 1
+            elif state_buf1[0,0,-1]:
+                kbm = kbm[0,0,-1]
+                state_buf1 = 1
+            else:
+                kbm = km
+                state_buf1 = 0
+    with computation(FORWARD):
+        with interval(0, 1):
+            if prsl * tx1 > 0.6:
+                kmax = k_idx + 1
+                state_buf2 = 1 # reuse flg
+            else:
+                kmax = km
+                state_buf2 = 0 # means kmax is set to default `km`
+        with interval(1, None):
+            if prsl * tx1 > 0.6:
+                kmax = k_idx + 1
+                state_buf2 = 1
+            elif state_buf2[0,0,-1]:
+                kmax = kmax[0,0,-1]
+                state_buf2 = 1
+            else:
+                kmax = km
+                state_buf2 = 0
+    with computation(BACKWARD):
+        with interval(-1, None):
+            kbm = min(kbm, kmax)
+        with interval(0, -1):
+            kbm = kbm[0,0,1]
+            kmax = kmax[0,0,1]
+            kbm = min(kbm, kmax)
 
 @gtscript.stencil(backend=BACKEND, rebuild=REBUILD, externals={"min": min, "max": max, "fpvs": fpvs})
 def init_final( km    : DTYPE_INT,
@@ -136,22 +193,7 @@ def init_final( km    : DTYPE_INT,
                 q1    : FIELD_FLOAT,
                 u1    : FIELD_FLOAT,
                 v1    : FIELD_FLOAT ):
-    
-    from __externals__ import min, max, fpvs
-    
     with computation(PARALLEL), interval(...):
-        
-        # Determine maximum indices for the parcel starting point (kbm) 
-        # and cloud top (kmax)
-        kbm  = km
-        kmax = km
-        tx1  = 1.0/ps
-        
-        if prsl * tx1 > 0.7: kbm  = k_idx + 1
-        if prsl * tx1 > 0.6: kmax = k_idx + 1
-        
-        kbm = min(kbm, kmax)
-        
         # Calculate hydrostatic height at layer centers assuming a flat 
         # surface (no terrain) from the geopotential
         zo = phil/g
@@ -187,20 +229,11 @@ def init_final( km    : DTYPE_INT,
         
         kpbl = min(kpbl, kbm)
 
-        # Calculate saturation specific humidity and enforce minimum 
-        # moisture values
-        pfld = prsl * 10.0
-        qo   = q1
-        qeso = (0.01 * eps * fpvs(to))/(pfld + epsm1 * qeso)    # fpsv is a function (can't be called inside conditional), also how to access lookup table?
-        val1 = 1.0e-8
-        val2 = 1.0e-10
-        qeso = max(qeso, val1 )
-        qo   = max(qo  , val2)
-
         #temporary var have to be defined outside of if-clause
         tem  = 0.0
+        fpvsto = fpvs(t1) #fpvs(to) and to = t1
         
-        if cnvflg == 1 and k_idx <= kmax:
+        if cnvflg and k_idx <= kmax:
             
             # Convert prsl from centibar to millibar, set normalized mass 
             # flux to 1, cloud properties to 0, and save model state 
@@ -226,11 +259,12 @@ def init_final( km    : DTYPE_INT,
             
             # Calculate saturation specific humidity and enforce minimum 
             # moisture values
-            #qeso = (0.01 * eps * fpvs(to))/(pfld + epsm1 * qeso)    # fpsv is a function (can't be called inside conditional), also how to access lookup table?
+            qeso = 0.01 * fpvsto
+            qeso = (eps * qeso)/(pfld + epsm1 * qeso)    # fpsv is a function (can't be called inside conditional), also how to access lookup table?
             #val1 = 1.0e-8
             #val2 = 1.0e-10
-            #qeso = max(qeso, val1 )
-            #qo   = max(qo  , val2)
+            qeso = qeso if qeso > 1.0e-8 else 1.0e-8#max(qeso, val1 )
+            qo   = qo if qo > 1.0e-10 else 1.0e-10  #max(qo  , val2)
             
             # Calculate moist static energy (heo) and saturation moist 
             # static energy (heso)
