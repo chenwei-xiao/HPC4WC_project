@@ -13,3 +13,12 @@
 12. best practice for debugging: PyCharm + Docker
 13. `dp`, `tem1`, `tem2`, `dv1h`, `rd` ... are not fields
 14. [TODO] fix temp vars in part3,4
+15. [ERROR] qtr.shape == (2304, 79, 7), ntr = 2 != qtr.shape[2] + 2
+16. Add `init_kbm_kmax`
+17. `heso` not correct -> `qeso` not correct -> should be 
+    ```fortran
+    qeso(i,k) = 0.01 * fpvsx(to(i,k))      ! fpvs is in pa
+    qeso(i,k) = eps * qeso(i,k) / (pfld(i,k) + epsm1*qeso(i,k))
+    ```
+18. test fpvsx_gt -> pass
+19. `fpvs(to);to=t1` -> `fpvs(t1)`

@@ -76,9 +76,8 @@ def fpvsx_gt(t):
     tliq = con_ttp
     tice = con_ttp - 20.0
 
-    tmp_l = exp(con_xponbl * (1.0 - tr))
-    tmp_r = exp(con_xponbi * (1.0 - tr))
-    tmp_i = exp(con_xponbi * (1.0 - tr))
+    tmp_l = np.e**(con_xponbl * (1.0 - tr))
+    tmp_i = np.e**(con_xponbi * (1.0 - tr))
     ret = 0.0
     w = 0.0
     pvl = 0.0
@@ -86,7 +85,7 @@ def fpvsx_gt(t):
     if t >= tliq:
         ret = con_psat * (tr**con_xponal) * tmp_l
     elif t < tice:
-        ret = con_psat * (tr**con_xponai) * tmp_r
+        ret = con_psat * (tr**con_xponai) * tmp_i
     else:
         w = (t - tice)/(tliq - tice)
         pvl = con_psat * (tr**con_xponal) * tmp_l
