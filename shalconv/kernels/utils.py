@@ -43,10 +43,7 @@ def slice_to_3d(slice):
     
     
 def exit_routine(cnvflg, im):
-    totflg = True
-    for i in range(0, im):
-        totflg = totflg and cnvflg[0, i, 0] == 0
-        
-    return totflg
+    cnvflg_np = cnvflg[0,:im,0].view(np.ndarray)
+    return cnvflg_np.sum() == 0
     
 ########################################################################
