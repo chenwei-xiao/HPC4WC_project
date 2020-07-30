@@ -9,7 +9,7 @@ export PYTHONPATH=${SERIALBOX_DIR}/python:$PYTHONPATH
 export NETCDF_LIB=${NETCDF_DIR}/lib
 module load Boost
 module load cudatoolkit
-NVCC_PATH=\$(which nvcc)
-CUDA_PATH=\$(echo \$NVCC_PATH | sed -e "s/\/bin\/nvcc//g")
-export CUDA_HOME=\$CUDA_PATH
-export LD_LIBRARY_PATH=\$CUDA_PATH/lib64:\$LD_LIBRARY_PATH
+NVCC_PATH=$(which nvcc)
+CUDA_PATH=$(echo $NVCC_PATH | sed -e "s/\/bin\/nvcc//g")
+export CUDA_HOME=$CUDA_PATH
+export LD_LIBRARY_PATH=$CUDA_PATH/lib64:$LD_LIBRARY_PATH
