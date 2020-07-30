@@ -1,8 +1,8 @@
+source ~/HPC4WC_venv/bin/activate
 module load daint-gpu
 module swap PrgEnv-cray PrgEnv-gnu
 module swap gcc gcc/7.3.0
 module load cray-netcdf
-module load cray-python
 module load CMake
 export SERIALBOX_DIR=/users/olifu/HPC4WC/serialbox/install
 export PYTHONPATH=${SERIALBOX_DIR}/python:$PYTHONPATH
