@@ -332,11 +332,11 @@ def call_fort_part1(fort_fun, data_dict):
 
 
 def test_part1():
-    data_dict = read_data(0,"in", path = "/data")
+    data_dict = read_data(0, True, path = "/data")
     gt4py_dict = numpy_dict_to_gt4py_dict(data_dict)
     heo, heso, qo, qeso = samfshalcnv_part1(gt4py_dict)
     import numpy.f2py, os
-    os.system("f2py --f2cmap fortran/.f2py_f2cmap -c -m part1 fortran/part1.f90")
+    os.system("f2py -c -m part1 fortran/part1.f90") #--f2cmap fortran/.f2py_f2cmap
     #numpy.f2py.run_main(['--f2cmap', 'fortran/.f2py_f2cmap', '-c', '-m', 'part1', 'fortran/part1.f90'])
     import part1
     from shalconv.funcphys import fpvsx
