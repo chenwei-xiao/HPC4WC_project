@@ -5,7 +5,7 @@ module swap gcc gcc/7.3.0
 module load cray-netcdf
 module load CMake
 export SERIALBOX_DIR=/project/c14/install/daint/serialbox2_master/gnu_debug
-export PYTHONPATH=`pwd`/:${SERIALBOX_DIR}/python:$PYTHONPATH
+export PYTHONPATH=${BASEDIR}:${SERIALBOX_DIR}/python:$PYTHONPATH
 export NETCDF_LIB=${NETCDF_DIR}/lib
 module load Boost
 module load cudatoolkit
