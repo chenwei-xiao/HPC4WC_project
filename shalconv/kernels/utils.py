@@ -35,7 +35,7 @@ def max(x, y):
 
 @gtscript.function
 def log(x, a):
-	return a * (x**(1.0/a)) - a
+    return a * (x**(1.0/a)) - a
         
 
 def slice_to_3d(slice):

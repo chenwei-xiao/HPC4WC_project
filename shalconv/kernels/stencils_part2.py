@@ -450,7 +450,7 @@ def stencil_static7(
                 tem  = 0.5 * (xlamue[0,0,0]+xlamue[0,0,-1]) * dz[0,0,0]
                 tem1 = 0.5 * xlamud * dz
                 factor = 1. + tem - tem1
-                hcko = ((1.-tem1)*hcko[0,0,-1]+tem*0.5* \
+                hcko = ((1.-tem1)*hcko[0,0,-1]+tem*0.5*
                             (heo+heo[0,0,-1]))/factor
                 dbyo = hcko - heso
 #
@@ -458,9 +458,9 @@ def stencil_static7(
                 factor = 1. + tem
                 ptem = tem + pgcon
                 ptem1= tem - pgcon
-                ucko = ((1.-tem)*ucko[0,0,-1]+ptem*uo \
+                ucko = ((1.-tem)*ucko[0,0,-1]+ptem*uo
                             +ptem1*uo[0,0,-1])/factor
-                vcko = ((1.-tem)*vcko[0,0,-1]+ptem*vo \
+                vcko = ((1.-tem)*vcko[0,0,-1]+ptem*vo
                             +ptem1*vo[0,0,-1])/factor
 
 ## for n = 1, ntr:
@@ -601,13 +601,11 @@ def stencil_static10(
             if(k > kb and k < kbcon1):
                 dz1 = zo[0,0,1] - zo
                 gamma = el2orc * qeso / (to**2)
-                rfact =  1. + delta * cp * gamma \
-                        * to / hvap
-                cina = cina + dz1 * (g / (cp * to)) \
-                        * dbyo / (1. + gamma) \
-                        * rfact 
+                rfact =  1. + delta * cp * gamma * to / hvap
+                cina = cina + dz1 * (g / (cp * to)) * \
+                       dbyo / (1. + gamma) * rfact
 #               val = 0.
-                cina = (cina + \
+                cina = (cina +
 #    &                 dz1 * eta(i,k) * g * delta *
                         dz1 * g * delta * \
                         (qeso - qo)) if ((qeso - qo)>0.) else cina
