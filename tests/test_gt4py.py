@@ -3,7 +3,7 @@ import numpy as np
 import gt4py
 import gt4py.gtscript as gtscript
 import gt4py.storage as gt_storage
-from gt4py.__gtscript__ import PARALLEL, computation, interval
+from gt4py.gtscript import PARALLEL, computation, interval
 
 
 backend="numpy" # "debug", "numpy", "gtx86", "gtcuda"

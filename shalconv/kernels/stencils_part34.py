@@ -1,6 +1,6 @@
 import gt4py as gt
 from gt4py import gtscript
-from gt4py.__gtscript__ import PARALLEL, FORWARD, BACKWARD, computation, interval
+from gt4py.gtscript import PARALLEL, FORWARD, BACKWARD, computation, interval
 from shalconv.funcphys import fpvsx_gt as fpvs
 from shalconv.physcons import (
     con_g     as g,
