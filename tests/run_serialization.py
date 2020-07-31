@@ -1,4 +1,5 @@
 import sys, os
+from shalconv import DATAPATH
 SERIALBOX_DIR = "/usr/local/serialbox"
 #SERIALBOX_DIR = "/project/c14/install/daint/serialbox2_master/gnu_debug"
 sys.path.append(SERIALBOX_DIR + "/python")
@@ -19,7 +20,7 @@ LDFLAGS = f"{SERIALBOX_DIR}/lib/libSerialboxFortran.a {SERIALBOX_DIR}/lib/libSer
            {SERIALBOX_DIR}/lib/libSerialboxCore.a -L/lib/x86_64-linux-gnu -L{NETCDF_LIB} \
             -lnetcdff -lnetcdf -lpthread -lstdc++ -lstdc++fs"
 
-datapath = "/data"
+datapath = DATAPATH
 outputfile = "fortran/samfshalconv_generated.f90"
 templatefile = "fortran/samfshalconv_serialize.template.f90"
 inputfile = "fortran/samfshalconv_serialize.f90"

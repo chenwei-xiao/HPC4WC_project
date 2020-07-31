@@ -1,6 +1,7 @@
 import numpy as np
 from gt4py import gtscript
 
+DATAPATH    = "/data"
 BACKEND     = "numpy"#"gtx86"
 REBUILD     = True
 BACKEND_OPTS = {'verbose': True} if BACKEND.startswith('gt') else {}

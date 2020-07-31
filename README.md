@@ -17,7 +17,8 @@ execute `build.sh` then `enter.sh`.
 2. execute `docker run -i -t --rm --mount type=bind,source={ABSOLUTE PATH OF THIS FOLDER},target=/work --name=hpc4wc_project hpc4wc_project`
 
 ## Run on Piz Diant
-execute `env_diant`
+1. CHANGE `DATAPATH` in `shalconv/__init__.py`
+2. execute `env_diant`
 
 ## Tests
 execute `pytest tests.py`

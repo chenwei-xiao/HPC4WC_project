@@ -506,6 +506,7 @@ program samfshalconv_serialize
 
       !$ser mode write
       !$ser savepoint "samfshalcnv-part2-input"
+      !$ser data ix=ix im=im km=km
       !$ser data islimsk=islimsk dot=dot qtr=qtr kpbl=kpbl kb=kb
       !$ser data kbcon=kbcon kbcon1=kbcon1 ktcon=ktcon ktcon1=ktcon1
       !$ser data kbm=kbm kmax=kmax aa1=aa1 cina=cina tkemean=tkemean
@@ -1348,6 +1349,7 @@ program samfshalconv_serialize
 !> - Calculate the change in moist static energy, moisture mixing ratio, and horizontal winds per unit cloud base mass flux for all layers below cloud top from equations B.14 and B.15 from Grell (1993) \cite grell_1993, and for the cloud top from B.16 and B.17.
       !$ser mode write
       !$ser savepoint "samfshalcnv-part3-input"
+      !$ser data ix=ix im=im km=km
       !$ser data delp=delp garea=garea qtr=qtr u1=u1 v1=v1
       !$ser data kb=kb kbcon=kbcon kbcon1=kbcon1 ktcon=ktcon ktcon1=ktcon1
       !$ser data kmax=kmax del=del umean=umean tauadv=tauadv gdx=gdx dtconv=dtconv
@@ -1572,6 +1574,7 @@ program samfshalconv_serialize
 !
       !$ser mode write
       !$ser savepoint "samfshalcnv-part4-input"
+      !$ser data ix=ix im=im km=km
       !$ser data islimsk=islimsk qtr=qtr q1=q1 t1=t1 u1=u1 v1=v1
       !$ser data ktop=ktop rn=rn cnvc=cnvc ud_mf=ud_mf kb=kb
       !$ser data kbcon=kbcon ktcon=ktcon kmax=kmax del=del delhbar=delhbar

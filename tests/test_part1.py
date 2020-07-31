@@ -330,9 +330,10 @@ def call_fort_part1(fort_fun, data_dict):
                                    c0s = c0s, c1 = c1, pgcon = pgcon, asolfac = asolfac)
     return heo, heso, qo, qeso
 
+from shalconv import DATAPATH
 
 def test_part1():
-    data_dict = read_data(0, True, path = "/data")
+    data_dict = read_data(0, True, path = DATAPATH)
     gt4py_dict = numpy_dict_to_gt4py_dict(data_dict)
     heo, heso, qo, qeso = samfshalcnv_part1(gt4py_dict)
     import numpy.f2py, os
