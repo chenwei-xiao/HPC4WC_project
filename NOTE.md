@@ -22,3 +22,4 @@
     ```
 18. test fpvsx_gt -> pass
 19. `fpvs(to);to=t1` -> `fpvs(t1)`
+20. delete `fscav` in part3 serialization and delete `delebar` in part4

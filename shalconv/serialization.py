@@ -12,13 +12,13 @@ import serialbox as ser
 int_vars = ["im", "ix", "km", "itc", "ntc", "ntk", "ntr", "ncloud"]
 int_arrs = ["kbot", "ktop", "kcnv", "islimsk"]
 
-IN_VARS = ["im", "ix", "km", "itc", "ntc", "ntk", "ntr", "ncloud", \
-           "clam", "c0s", "c1", "asolfac", "pgcon", "delt", "islimsk", \
-           "psp", "delp", "prslp", "garea", "hpbl", "dot", \
-           "phil", "fscav", \
-           "kcnv", "kbot", "ktop", "qtr", "q1", "t1", "u1", \
+IN_VARS = ["im", "ix", "km", "itc", "ntc", "ntk", "ntr", "ncloud",
+           "clam", "c0s", "c1", "asolfac", "pgcon", "delt", "islimsk",
+           "psp", "delp", "prslp", "garea", "hpbl", "dot",
+           "phil", "fscav",
+           "kcnv", "kbot", "ktop", "qtr", "q1", "t1", "u1",
            "v1", "rn", "cnvw", "cnvc", "ud_mf", "dt_mf"]
-OUT_VARS = ["kcnv", "kbot", "ktop", "qtr", "q1", "t1", "u1", \
+OUT_VARS = ["kcnv", "kbot", "ktop", "qtr", "q1", "t1", "u1",
             "v1", "rn", "cnvw", "cnvc", "ud_mf", "dt_mf"]
 
 def clean_numpy_dict(data_dict):
