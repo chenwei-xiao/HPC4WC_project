@@ -1346,6 +1346,17 @@ program samfshalconv_serialize
 !
 !> ## Calculate the tendencies of the state variables (per unit cloud base mass flux) and the cloud base mass flux.
 !> - Calculate the change in moist static energy, moisture mixing ratio, and horizontal winds per unit cloud base mass flux for all layers below cloud top from equations B.14 and B.15 from Grell (1993) \cite grell_1993, and for the cloud top from B.16 and B.17.
+      !$ser mode write
+      !$ser savepoint "samfshalcnv-part3-input"
+      !$ser data delp=delp garea=garea qtr=qtr u1=u1 v1=v1
+      !$ser data kb=kb kbcon=kbcon kbcon1=kbcon1 ktcon=ktcon ktcon1=ktcon1
+      !$ser data kmax=kmax del=del umean=umean tauadv=tauadv gdx=gdx dtconv=dtconv
+      !$ser data po=po xlamud=xlamud xmb=xmb xmbmax=xmbmax to=to qo=qo uo=uo vo=vo
+      !$ser data ctro=ctro qaero=qaero wc=wc scaldfunc=scaldfunc sigmagfm=sigmagfm
+      !$ser data qlko_ktcon=qlko_ktcon xlamue=xlamue heo=heo
+      !$ser data dellah=dellah dellaq=dellaq dellae=dellae dellau=dellau dellav=dellav
+      !$ser data hcko=hcko ucko=ucko vcko=vcko qcko=qcko qrcko=qrcko ecko=ecko
+      !$ser data eta=eta zi=zi c0t=c0t sumx=sumx cnvflg=cnvflg
       do k = 1, km
         do i = 1, im
           if(cnvflg(i) .and. k <= kmax(i)) then
@@ -1559,6 +1570,17 @@ program samfshalconv_serialize
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
+      !$ser mode write
+      !$ser savepoint "samfshalcnv-part4-input"
+      !$ser data islimsk=islimsk qtr=qtr q1=q1 t1=t1 u1=u1 v1=v1
+      !$ser data ktop=ktop rn=rn cnvc=cnvc ud_mf=ud_mf kb=kb
+      !$ser data kbcon=kbcon ktcon=ktcon kmax=kmax del=del delhbar=delhbar
+      !$ser data delq=delq delq2=delq2 delqbar=delqbar delqev=delqev
+      !$ser data deltbar=deltbar deltv=deltv edt=edt qcond=qcond qevap=qevap
+      !$ser data rntot=rntot xmb=xmb delebar=delebar delubar=delubar delvbar=delvbar
+      !$ser data pfld=pfld qeso=qeso ctr=ctr qaero=qaero sigmagfm=sigmagfm
+      !$ser data dellal=dellal dellah=dellah dellaq=dellaq dellae=dellae dellau=dellau
+      !$ser data dellav=dellav eta=eta pwo=pwo cnvwt=cnvwt cnvflg=cnvflg flg=flg
       do k = 1, km
         do i = 1, im
           if (cnvflg(i) .and. k <= kmax(i)) then
