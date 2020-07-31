@@ -106,6 +106,26 @@ def comp_tendencies( g         : DTYPE_FLOAT,
     
     with computation(PARALLEL), interval(1, -1):
         
+        dp = 0.0
+        dz = 0.0
+        gdp = 0.0
+        
+        dv1h = 0.0
+        dv3h = 0.0
+        dv2h = 0.0
+        
+        dv1q = 0.0
+        dv3q = 0.0
+        dv2q = 0.0
+        
+        tem  = 0.0
+        tem1 = 0.0
+        
+        eta_curr = 0.0
+        eta_prev = 0.0
+        
+        tem2 = 0.0
+        
         # Changes due to subsidence and entrainment
         if cnvflg == 1 and k_idx > kb and k_idx < ktcon:
                 
@@ -149,6 +169,8 @@ def comp_tendencies( g         : DTYPE_FLOAT,
             
     with computation(PARALLEL), interval(...):
         
+        tfac = 0.0
+        
         # Cloud top
         if cnvflg == 1:
             
@@ -177,9 +199,9 @@ def comp_tendencies( g         : DTYPE_FLOAT,
             
             tfac   = 1.0 + gdx/75000.0
             dtconv = tfac * tem/wc
-            dtconv = dtconv if(dtconv > dtmin) else dtmin #max(dtconv, dtmin)
-            dtconv = dtconv if(dtconv > dt2) else dt2     #max(dtconv, dt2)
-            dtconv = dtconv if(dtconv < dtmax) else dtmax #min(dtconv, dtmax)
+            dtconv = max(dtconv, dtmin)
+            dtconv = max(dtconv, dt2)
+            dtconv = min(dtconv, dtmax)
             
             # Initialize field for advective time scale computation
             sumx  = 0.0
@@ -208,9 +230,17 @@ def comp_tendencies( g         : DTYPE_FLOAT,
             
     with computation(PARALLEL), interval(...):
         
+        rho = 0.0
+        val = 1.0
+        val1 = 2.0e-4
+        val2 = 6.0e-4
+        val3 = 0.001
+        val4 = 0.999
+        val5 = 0.0
+        
         if cnvflg == 1:
             umean  = umean/sumx
-            umean  = umean if(umean > 1.0) else 1.0 #max(umean, val)  # Passing literals (e.g. 1.0) to functions might cause errors in conditional statements
+            umean  = max(umean, val)  # Passing literals (e.g. 1.0) to functions might cause errors in conditional statements
             tauadv = gdx/umean
             
             if k_idx == kbcon:
@@ -220,7 +250,7 @@ def comp_tendencies( g         : DTYPE_FLOAT,
                 # mean updraft velocity
                 rho  = po * 100.0 / (rd * to)
                 tfac = tauadv/dtconv
-                tfac = tfac if(tfac<1.0) else 1.0 #min(tfac, val)  # Same as above: literals
+                tfac = min(tfac, val)  # Same as above: literals
                 xmb  = tfac * betaw * rho * wc
                 
                 # For scale-aware parameterization, the updraft fraction 
@@ -229,14 +259,14 @@ def comp_tendencies( g         : DTYPE_FLOAT,
                 # al.'s (2017) \cite han_et_al_2017 equation 4 and 5), 
                 # following the study by Grell and Freitas (2014) \cite 
                 # grell_and_freitus_2014
-                tem  = xlamue if(xlamue > 2.0e-4) else 2.0e-4 #max(xlamue, 2.0e-4)
-                tem  = tem if(xlamue < 6.0e-4) else 6.0e-4 #0.2/min(tem, 6.0e-4)
-                tem  = 0.2 / tem
+                tem  = max(xlamue, val1)
+                tem  = min(tem, val2)
+                tem  = 0.2/tem
                 tem1 = 3.14 * tem * tem
                 
                 sigmagfm = tem1/garea
-                sigmagfm = sigmagfm if(sigmagfm > 0.001) else 0.001 #max(sigmagfm, 0.001)
-                sigmagfm = sigmagfm if(sigmagfm > 0.999) else 0.999 #min(sigmagfm, 0.999)
+                sigmagfm = max(sigmagfm, val3)
+                sigmagfm = min(sigmagfm, val4)
             
             # Then, calculate the reduction factor (scaldfunc) of the 
             # vertical convective eddy transport of mass flux as a 
@@ -249,13 +279,13 @@ def comp_tendencies( g         : DTYPE_FLOAT,
             # al.'s (2017) \cite han_et_al_2017 equation 2).
             if gdx < dxcrt:
                 scaldfunc = (1.0 - sigmagfm) * (1.0 - sigmagfm)
-                scaldfunc = scaldfunc if (scaldfunc < 1.) else 1.  # min(scaldfunc, 1.0)
-                scaldfunc = scaldfunc if (scaldfunc > 0.) else 0.  # max(scaldfunc, 0.0)
+                scaldfunc = min(scaldfunc, val)
+                scaldfunc = max(scaldfunc, val5)
             else:
                 scaldfunc = 1.0
             
             xmb = xmb * scaldfunc
-            xmb = xmb if(xmb < xmbmax) else xmbmax #min(xmb, xmbmax)
+            xmb = min(xmb, xmbmax)
 
 
 @gtscript.stencil(backend=BACKEND, rebuild=REBUILD)
@@ -278,6 +308,10 @@ def comp_tendencies_tr( g      : DTYPE_FLOAT,
             dellae = 0.0
             
     with computation(PARALLEL), interval(1, -1):
+        
+        tem1 = 0.0
+        tem2 = 0.0
+        dp   = 0.0
         
         if cnvflg == 1 and k_idx > kb and k_idx < ktcon:
             
@@ -363,25 +397,29 @@ def feedback_control_update( dt2    : DTYPE_FLOAT,
         val  = 1.0e-8
         qeso = max(qeso, val)
         
+        dellat = 0.0
+        
+        # - Calculate the temperature tendency from the moist 
+        #   static energy and specific humidity tendencies
+        # - Update the temperature, specific humidity, and 
+        #   horizontal wind state variables by multiplying the 
+        #   cloud base mass flux-normalized tendencies by the 
+        #   cloud base mass flux
         if cnvflg == 1 and k_idx > kb and k_idx <= ktcon:
-                
-                # - Calculate the temperature tendency from the moist 
-                #   static energy and specific humidity tendencies
-                # - Update the temperature, specific humidity, and 
-                #   horizontal wind state variables by multiplying the 
-                #   cloud base mass flux-normalized tendencies by the 
-                #   cloud base mass flux
-                dellat = (dellah - hvap * dellaq)/cp
-                t1     = t1 + dellat * xmb * dt2
+            dellat = (dellah - hvap * dellaq)/cp
+            t1     = t1 + dellat * xmb * dt2
+        
+        qeso = 0.01 * fpvs(t1)    # fpvs is in Pa
+        
+        if cnvflg == 1 and k_idx > kb and k_idx <= ktcon:
+            
                 q1     = q1 + dellaq * xmb * dt2
                 u1     = u1 + dellau * xmb * dt2
                 v1     = v1 + dellav * xmb * dt2
                 
                 # Recalculate saturation specific humidity using the 
                 # updated temperature
-                qeso = 0.01 * fpvs(t1)    # fpvs is in Pa
                 qeso = eps * qeso/(pfld + epsm1 * qeso)
-                val  = 1.0e-8
                 qeso = max(qeso, val)
     
     # Accumulate column-integrated tendencies (propagate forward)
@@ -389,6 +427,9 @@ def feedback_control_update( dt2    : DTYPE_FLOAT,
         
         # To avoid conditionals in the full interval
         with interval(0, 1):
+            
+            dp = 0.0
+            dpg = 0.0
             
             if cnvflg == 1 and k_idx > kb and k_idx <= ktcon:
                 
@@ -482,6 +523,16 @@ def feedback_control_update( dt2    : DTYPE_FLOAT,
     
     with computation(PARALLEL), interval(...):
         
+        val1 = 0.0
+        if cnvflg == 1 and k_idx >= kbcon and k_idx < ktcon:
+            val1 = 1.0 + 675.0 * eta * xmb
+            
+        val2 = 0.2
+        val3 = 0.0
+        val4 = 1.0e4
+        
+        cnvc = 0.04 * log(val1, val4)  # 1.0e4 seems to get reasonable results, since val1 is on average ~50
+        
         if cnvflg == 1:
             
             if rn < 0.0 or flg == 0: rn = 0.0
@@ -497,10 +548,6 @@ def feedback_control_update( dt2    : DTYPE_FLOAT,
                 
                 # Calculate convective cloud cover, which is used when 
                 # pdf-based cloud fraction is used
-                val1 = 1.0 + 675.0 * eta * xmb
-                cnvc = 0.04 * log(val1, 1.0e4)  # 1.0e4 seems to get reasonable results, since val1 is on average ~50
-                val2 = 0.2
-                val3 = 0.0
                 cnvc = min(cnvc, val2)
                 cnvc = max(cnvc, val3)
                 
@@ -520,6 +567,7 @@ def feedback_control_upd_trr( dt2    : DTYPE_FLOAT,
                               k_idx  : FIELD_INT,
                               kmax   : FIELD_INT,
                               ktcon  : FIELD_INT,
+                              del0   : FIELD_FLOAT,
                               delebar: FIELD_FLOAT,
                               ctr    : FIELD_FLOAT,
                               dellae : FIELD_FLOAT,
@@ -540,12 +588,19 @@ def feedback_control_upd_trr( dt2    : DTYPE_FLOAT,
         
         with interval(0, 1):
             
+            dp = 0.0
+            
             if cnvflg == 1 and k_idx <= kmax and k_idx <= ktcon:
+                dp = 1000.0 * del0
+                
                 delebar = delebar + dellae * xmb * dp/g    # Where does dp come from? Is it correct to use the last value at line 1559 of samfshalcnv.F?
                 
         with interval(1, None):
             
             if cnvflg == 1:
+                
+                dp = 1000.0 * del0
+                
                 if k_idx <= kmax and k_idx <= kcon:
                     delebar = delebar[0, 0, -1] + dellae * xmb * dp/g
                 else:
@@ -591,11 +646,18 @@ def separate_detrained_cw( dt2   : DTYPE_FLOAT,
         
         # Separate detrained cloud water into liquid and ice species as 
         # a function of temperature only
+        
+        tem  = 0.0
+        val1 = 1.0
+        val2 = 0.0
+        tem1 = 0.0
+        
         if cnvflg == 1 and k_idx >= kbcon and k_idx <= ktcon:
             
             tem  = dellal * xmb * dt2
-            tem1 = (tcr - t1) * tcrf if(((tcr - t1) * tcrf)<1.0) else 1.0 #min(1.0, (tcr - t1) * tcrf)
-            tem1 = tem1 if(tem1 > 0.0) else 0.0 #max(0.0, tem1)
+            tem1 = (tcr - t1) * tcrf
+            tem1 = min(val1, tem1)
+            tem1 = max(val2, tem1)
             
             if qtr_1 > -999.0:
                 qtr_0 = qtr_0 + tem * tem1
@@ -619,12 +681,16 @@ def tke_contribution( betaw   : DTYPE_FLOAT,
     
     with computation(PARALLEL), interval(1, -1):
         
+        tem = 0.0
+        tem1 = 0.0
+        ptem = 0.0
+        
         # Include TKE contribution from shallow convection
         if cnvflg == 1 and k_idx > kb and k_idx < ktop:
             
             tem      = 0.5 * (eta[0, 0, -1] + eta[0, 0, 0]) * xmb
             tem1     = pfld * 100.0/(rd * t1)
-            sigmagfm = sigmagfm if(sigmagfm > betaw) else betaw #max(sigmagfm, betaw)
+            sigmagfm = max(sigmagfm, betaw)
             ptem     = tem/(sigmagfm * tem1)
             qtr_ntk  = qtr_ntk + 0.5 * sigmagfm * ptem * ptem
 

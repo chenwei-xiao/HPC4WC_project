@@ -19,18 +19,12 @@ def exp(x):
 
 @gtscript.function
 def min(x, y):
-    if x <= y:
-        return x
-    else:
-        return y
+    return x if x <= y else y 
         
 
 @gtscript.function
 def max(x, y):
-    if x >= y:
-        return x
-    else:
-        return y
+    return x if x >= y else y 
         
 
 @gtscript.function
