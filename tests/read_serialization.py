@@ -2,7 +2,6 @@ from shalconv import DATAPATH
 from shalconv.serialization import data_dict_from_var_list, numpy_dict_to_gt4py_dict
 import serialbox as ser
 
-
 def read_serialization_partx(var_list, part, tile = 0, path = DATAPATH):
     serializer = ser.Serializer(ser.OpenModeKind.Read, path, "Serialized_rank"+str(tile))
     sp = ser.Savepoint(f"samfshalcnv-part{part}-input")
