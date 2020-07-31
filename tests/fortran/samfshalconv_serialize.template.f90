@@ -29,7 +29,7 @@ program samfshalconv_serialize
 
     !datapath = "/data"
 
-    !$ser init directory='/data' prefix='Serialized' prefix_ref='Generator' mpi_rank=0
+    !$ser init directory='DATAPATH' prefix='Serialized' prefix_ref='Generator' mpi_rank=0
 
     !$ser mode read
     !$ser savepoint "samfshalcnv-in-000000"
