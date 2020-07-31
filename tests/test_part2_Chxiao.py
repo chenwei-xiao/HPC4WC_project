@@ -53,7 +53,7 @@ def samfshalcnv_part2(data_dict):
         qtr_ntr = gt.storage.from_array(slice_to_3d(qtr[:, :, ntr]), BACKEND, default_origin)
         stencil_static3( sumx, tkemean, cnvflg, k_idx, kb, kbcon, zo, qtr_ntr,
                          tkemn, tkemx, clamt, clam, clamd, dtke)
-        qtr[:,:,ntr] = qtr_ntr ## is this permitted?
+        qtr[:,:,ntr] = qtr_ntr.view(np.ndarray)[0,:,:]
     else:
         stencil_static4( cnvflg, clamt, clam
                          )
@@ -61,6 +61,38 @@ def samfshalcnv_part2(data_dict):
     ### assume updraft entrainment rate is an inverse function of height
     stencil_static5( cnvflg, xlamue, clamt, zi, xlamud, k_idx, kbcon, kb,
                      eta, ktconn, kmax, kbm, hcko, ucko, vcko, heo, uo, vo)
+
+    stencil_static7( cnvflg, k_idx, kb, kmax, zi, xlamue, xlamud, hcko, heo, dbyo,
+                     heso, cm, pgcon, ucko, uo, vcko, vo)
+
+    stencil_static9( cnvflg, flg, kbcon1, kmax, k_idx, kbm, kbcon, dbyo,
+                     dthk, pfld)
+    
+    if exit_routine(cnvflg, im): return
+
+    ### calculate convective inhibition
+    stencil_static10( cina, cnvflg, k_idx, kb, kbcon1, zo, el2orc, qeso, to, delta,
+                      dbyo, qo, w1l, w2l, w3l, w4l, w1s, w2s, w3s, w4s, pdot,
+                      cinacrmx, cinacrmn, islimsk)
+    
+    if exit_routine(cnvflg, im): return
+
+    stencil_static11( flg, cnvflg, ktcon, kbm, kbcon1, dbyo, kbcon, del0, xmbmax,
+                     dt2, aa1, kb, qcko, qo, qrcko, zi, el2orc, qeso, to, xlamue, 
+                     xlamud, eta, c0t, c1, dellal, buo, drag, zo, delta, k_idx, pwo,
+                     cnvwt)
+    
+    if exit_routine(cnvflg, im): return
+
+    stencil_static12( cnvflg, aa1, flg, ktcon1, kbm, k_idx, ktcon, zo, el2orc, qeso, 
+                     to, delta, dbyo, zi, xlamue, xlamud, qcko, qrcko, qo, eta, del0,
+                     c0t, c1, pwo, cnvwt, buo, wu2, wc, sumx, kbcon1, drag, dellal, aafac)
+
+    
+    if(ncloud > 0):
+        stencil_static13( cnvflg, k_idx, ktcon, el2orc, qeso, to, dbyo, qcko, qlko_ktcon)
+    else:
+        stencil_static14( cnvflg, vshear, k_idx, kb, ktcon, uo, vo, zi, edt)
     
 
 
