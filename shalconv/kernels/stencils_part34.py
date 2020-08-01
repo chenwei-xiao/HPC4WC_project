@@ -548,8 +548,11 @@ def feedback_control_update( km     : DTYPE_INT,
                     
                     if rn > 0.0 and qcond < 0.0:
                         
-                        tem   = -0.32 * sqrt(dt2 * rn)
-                        qevap = -qcond * (1.0 - exp(tem))
+                        tem   = dt2 * rn
+                        tem   = sqrt(tem)
+                        tem   = -0.32 * tem
+                        tem   = exp(tem)
+                        qevap = -qcond * (1.0 - tem)
                         tem   = 1000.0 * g/dp
                         qevap = min(qevap, tem)
                         delq2 = delqev + 0.001 * qevap * dp/g
