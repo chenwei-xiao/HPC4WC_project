@@ -217,7 +217,7 @@ def init_final( km    : DTYPE_INT,
             flg  = flg[0, 0, -1]
         else:
             kpbl = kpbl[0, 0, -1]
-            flg  = 0#False
+            flg  = 0 # False
     
     with computation(BACKWARD),interval(0,-1):
         

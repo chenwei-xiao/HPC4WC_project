@@ -190,22 +190,24 @@ def comp_tendencies( g         : DTYPE_FLOAT,
                 
                 # Cloud water
                 dellal = eta[0, 0, -1] * qlko_ktcon * gdp
-                
-            # Following Bechtold et al. (2008) \cite 
-            # bechtold_et_al_2008, calculate the convective turnover 
-            # time using the mean updraft velocity (wc) and the cloud 
-            # depth. It is also proportional to the grid size (gdx).
-            tem = zi_ktcon1 - zi_kbcon1
             
-            tfac   = 1.0 + gdx/75000.0
-            dtconv = tfac * tem/wc
-            dtconv = max(dtconv, dtmin)
-            dtconv = max(dtconv, dt2)
-            dtconv = min(dtconv, dtmax)
-            
-            # Initialize field for advective time scale computation
-            sumx  = 0.0
-            umean = 0.0
+    with computation(PARALLEL), interval(...):
+        
+        # Following Bechtold et al. (2008) \cite 
+        # bechtold_et_al_2008, calculate the convective turnover 
+        # time using the mean updraft velocity (wc) and the cloud 
+        # depth. It is also proportional to the grid size (gdx).
+        tem = zi_ktcon1 - zi_kbcon1
+        
+        tfac   = 1.0 + gdx/75000.0
+        dtconv = tfac * tem/wc
+        dtconv = max(dtconv, dtmin)
+        dtconv = max(dtconv, dt2)
+        dtconv = min(dtconv, dtmax)
+        
+        # Initialize field for advective time scale computation
+        sumx  = 0.0
+        umean = 0.0
     
     # Calculate advective time scale (tauadv) using a mean cloud layer 
     # wind speed (propagate forward)
@@ -334,8 +336,9 @@ def comp_tendencies_tr( g      : DTYPE_FLOAT,
                 dellae = eta[0, 0, -1] * (ecko[0, 0, -1] - ctro[0, 0, -1]) * g/dp
             
 
-@gtscript.stencil(backend=BACKEND, rebuild=REBUILD, externals={"fpvs": fpvs, "min": min, "max": max})
-def feedback_control_update( dt2    : DTYPE_FLOAT,
+@gtscript.stencil(backend=BACKEND, rebuild=REBUILD, externals={"fpvs": fpvs, "min": min, "max": max, "exp": exp, "sqrt": sqrt})
+def feedback_control_update( km     : DTYPE_INT,
+                             dt2    : DTYPE_FLOAT,
                              g      : DTYPE_FLOAT,
                              evfact : DTYPE_FLOAT,
                              evfactl: DTYPE_FLOAT,
@@ -384,7 +387,7 @@ def feedback_control_update( dt2    : DTYPE_FLOAT,
                              cnvc   : FIELD_FLOAT,
                              ud_mf  : FIELD_FLOAT,
                              dt_mf  : FIELD_FLOAT,
-                             eta    : FIELD_FLOAT):
+                             eta    : FIELD_FLOAT ):
     
     with computation(PARALLEL), interval(...):
         
@@ -469,17 +472,18 @@ def feedback_control_update( dt2    : DTYPE_FLOAT,
         # To avoid conditionals in the full interval
         with interval(-1, None):
             
-            rntot = rntot + pwo * xmb * 0.001 * dt2
+            if cnvflg == 1 and k_idx > kb and k_idx < ktcon:
+                rntot = rntot + pwo * xmb * 0.001 * dt2
         
         with interval(0, -1):
             if cnvflg == 1:
                 
                 # Accumulate column-integrated tendencies (propagate backward)
-                delhbar = delhbar[0, 0, -1]
-                delqbar = delqbar[0, 0, -1]
-                deltbar = deltbar[0, 0, -1]
-                delubar = delubar[0, 0, -1]
-                delvbar = delvbar[0, 0, -1]
+                delhbar = delhbar[0, 0, 1]
+                delqbar = delqbar[0, 0, 1]
+                deltbar = deltbar[0, 0, 1]
+                delubar = delubar[0, 0, 1]
+                delvbar = delvbar[0, 0, 1]
                 
                 # Add up column-integrated convective precipitation by 
                 # multiplying the normalized value by the cloud base 
@@ -506,20 +510,87 @@ def feedback_control_update( dt2    : DTYPE_FLOAT,
     #   evaporation of convective precipitation
     # - Update column-integrated tendencies to account for 
     #   evaporation of convective precipitation
-    
-    # TODO: LAST MISSING LOOP
-    # ~ with computation(BACKWARD), interval(...):
-    
-        # ~ if k_idx <= kmax:
+    with computation(BACKWARD), interval(...):
             
-            # ~ deltv = 0.0
-            # ~ delq  = 0.0
-            # ~ qevap = 0.0
+            evef     = 0.0
+            dp       = 0.0
+            sqrt_val = 0.0
+            tem      = 0.0
+            tem1     = 0.0
             
-            # ~ if cnvflg == 1 and k_idx > kb and k_idx < ktcon:
+            if k_idx < km:
                 
-                # ~ rn = rn + pwo * xmb * 0.001 * dt2
+                rn      = rn[0, 0, 1]
+                flg     = flg[0, 0, 1]
+                delqev  = delqev[0, 0, 1]
+                delqbar = delqbar[0, 0, 1]
+                deltbar = deltbar[0, 0, 1]
+            
+            if k_idx <= kmax:
                 
+                deltv = 0.0
+                delq  = 0.0
+                qevap = 0.0
+                
+                if cnvflg == 1 and k_idx > kb and k_idx < ktcon:
+                    rn = rn[0, 0, 1] + pwo * xmb * 0.001 * dt2
+                    
+                if flg == 1 and k_idx < ktcon:
+                    
+                    if islimsk == 1: 
+                        evef = edt * evfactl
+                    else:
+                        evef = edt * evfact
+                        
+                    qcond = evef * (q1 - qeso)/(1.0 + el2orc * qeso/(t1**2))
+                    
+                    dp = 1000.0 * del0
+                    
+                    if rn > 0.0 and qcond < 0.0:
+                        
+                        tem   = -0.32 * sqrt(dt2 * rn)
+                        qevap = -qcond * (1.0 - exp(tem))
+                        tem   = 1000.0 * g/dp
+                        qevap = min(qevap, tem)
+                        delq2 = delqev + 0.001 * qevap * dp/g
+                        
+                    if rn > 0.0 and qcond < 0.0 and delq2 > rntot:
+                        
+                        qevap = 1000.0 * g * (rntot - delqev) / dp
+                        flg   = 0
+                        
+                    else:
+                        flg = flg
+                        
+                    if rn > 0.0 and qevap > 0.0:
+                        
+                        tem  = 0.001 * dp/g
+                        tem1 = qevap * tem
+                        
+                        if tem1 > rn:
+                            qevap = rn/tem
+                            rn    = 0.0
+                        else:
+                            rn = rn - tem1
+                        
+                        q1     = q1 + qevap
+                        t1     = t1 - elocp * qevap
+                        deltv  = -elocp * qevap/dt2
+                        delq   = qevap/dt2
+                        
+                        delqev = delqev + 0.001 * dp * qevap/g
+                        
+                    else:
+                        delqev = delqev
+                        
+                    delqbar = delqbar + delq  * dp/g
+                    deltbar = deltbar + deltv * dp/g
+                
+                
+    with computation(FORWARD), interval(1, None):
+        
+        rn  = rn [0, 0, -1]
+        flg = flg[0, 0, -1]
     
     with computation(PARALLEL), interval(...):
         
