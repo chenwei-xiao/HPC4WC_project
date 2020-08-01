@@ -167,7 +167,7 @@ def comp_tendencies( g         : DTYPE_FLOAT,
             tem2   = eta_prev * (vo[0, 0, -1] - vcko[0, 0, -1])
             dellav = dellav + (tem1 - tem2) * gdp
             
-    with computation(PARALLEL), interval(...):
+    with computation(PARALLEL), interval(1,None):
         
         tfac = 0.0
         
