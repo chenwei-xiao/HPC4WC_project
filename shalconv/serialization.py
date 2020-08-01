@@ -10,7 +10,9 @@ sys.path.append(SERIALBOX_DIR + "/python")
 import serialbox as ser
 
 int_vars = ["im", "ix", "km", "itc", "ntc", "ntk", "ntr", "ncloud"]
-int_arrs = ["kbot", "ktop", "kcnv", "islimsk"]
+int_arrs = ['islimsk', 'kcnv', 'kbot', 'ktop', 'kpbl', 'kb', 'kbcon',
+            'kbcon1', 'ktcon', 'ktcon1', 'ktconn', 'kbm', 'kmax',
+            'cnvflg', 'flg']
 
 IN_VARS = ["im", "ix", "km", "itc", "ntc", "ntk", "ntr", "ncloud",
            "clam", "c0s", "c1", "asolfac", "pgcon", "delt", "islimsk",
