@@ -36,6 +36,10 @@ def get_declared_vars(root = parse_xml()):
 def get_declared_arr_vars(root = parse_xml()):
     return [i.get("name") for i in root.xpath(".//variables/variable[dimensions]")]
 
+def get_nonfloat_arr_vars(root = parse_xml()):
+    return [i.get("name") for i in
+            root.xpath(".//declaration[type[@name='integer' or @name='logical']]/variables/variable[dimensions]")]
+
 def get_arguments_range(startlineno, endlineno):
     root = parse_xml()
     declaredarrvars = get_declared_arr_vars(root)
@@ -44,7 +48,8 @@ def get_arguments_range(startlineno, endlineno):
     readvars = set([i.get("id") for i in readvars
                     if i.get("id") not in ["n","i","k","min","max","fpvs","fpvsx"]])
     readvars_list = [i for i in declaredarrvars if i in readvars]
-    return writevars, readvars_list
+    writevars_list = [i for i in declaredarrvars if i in writevars]
+    return writevars_list, readvars_list, set(readvars_list).intersection(writevars_list)
 
 def print_ser_def(varlist):
     return " ".join([var+"="+var for var in varlist])

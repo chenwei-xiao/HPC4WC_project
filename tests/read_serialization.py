@@ -2,7 +2,6 @@ from shalconv import DATAPATH
 from shalconv.serialization import data_dict_from_var_list, numpy_dict_to_gt4py_dict
 import serialbox as ser
 
-
 def read_serialization_partx(var_list, part, tile = 0, path = DATAPATH):
     serializer = ser.Serializer(ser.OpenModeKind.Read, path, "Serialized_rank"+str(tile))
     sp = ser.Savepoint(f"samfshalcnv-part{part}-input")
@@ -11,6 +10,7 @@ def read_serialization_partx(var_list, part, tile = 0, path = DATAPATH):
 
 def read_serialization_part2():
     var_list = ['ix', 'km', 'islimsk', 'dot', 'qtr', 'kpbl', 'kb', 'kbcon', 'kbcon1',
+                'cnvwt', 'dellal', 'ktconn', 'pwo', 'qlko_ktcon', 'qrcko', 'xmbmax', #output
                 'ktcon', 'ktcon1', 'kbm', 'kmax', 'aa1', 'cina', 'tkemean',
                 'clamt', 'del', 'edt', 'pdot', 'po', 'hmax', 'vshear', 'xlamud',
                 'pfld', 'to', 'qo', 'uo', 'vo', 'qeso', 'ctro', 'wu2', 'buo',
@@ -25,13 +25,14 @@ def read_serialization_part3():
                 'umean', 'tauadv', 'gdx', 'dtconv', 'po', 'xlamud',
                 'xmb', 'xmbmax', 'to', 'qo', 'uo', 'vo', 'ctro', 'qaero',
                 'wc', 'scaldfunc', 'sigmagfm', 'qlko_ktcon', 'xlamue',
-                'heo', 'dellah', 'dellaq', 'dellae', 'dellau', 'dellav',
+                'heo', 'dellah', 'dellaq', 'dellae', 'dellau', 'dellav', 'dellal',
                 'hcko', 'ucko', 'vcko', 'qcko', 'qrcko', 'ecko', 'eta',
                 'zi', 'c0t', 'sumx', 'cnvflg']
     return read_serialization_partx(var_list, 3)
 
 def read_serialization_part4():
     var_list = ['ix', 'km', 'islimsk', 'qtr', 'q1', 't1', 'u1', 'v1',
+                'cnvw', 'dt_mf', 'kbot', 'kcnv', #output
                 'ktop', 'rn', 'cnvc', 'ud_mf', 'kb', 'kbcon', 'ktcon',
                 'kmax', 'del', 'delhbar', 'delq', 'delq2', 'delqbar',
                 'delqev', 'deltbar', 'deltv', 'edt', 'qcond', 'qevap',

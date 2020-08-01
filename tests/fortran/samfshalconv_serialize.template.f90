@@ -507,6 +507,8 @@ program samfshalconv_serialize
       !$ser mode write
       !$ser savepoint "samfshalcnv-part2-input"
       !$ser data ix=ix im=im km=km
+      !$ser data cnvwt=cnvwt dellal=dellal ktconn=ktconn pwo=pwo !output
+      !$ser data qlko_ktcon=qlko_ktcon qrcko=qrcko xmbmax=xmbmax !output
       !$ser data islimsk=islimsk dot=dot qtr=qtr kpbl=kpbl kb=kb
       !$ser data kbcon=kbcon kbcon1=kbcon1 ktcon=ktcon ktcon1=ktcon1
       !$ser data kbm=kbm kmax=kmax aa1=aa1 cina=cina tkemean=tkemean
@@ -1350,6 +1352,7 @@ program samfshalconv_serialize
       !$ser mode write
       !$ser savepoint "samfshalcnv-part3-input"
       !$ser data ix=ix im=im km=km
+      !$ser data dellal=dellal !output
       !$ser data delp=delp garea=garea qtr=qtr u1=u1 v1=v1
       !$ser data kb=kb kbcon=kbcon kbcon1=kbcon1 ktcon=ktcon ktcon1=ktcon1
       !$ser data kmax=kmax del=del umean=umean tauadv=tauadv gdx=gdx dtconv=dtconv
@@ -1575,6 +1578,7 @@ program samfshalconv_serialize
       !$ser mode write
       !$ser savepoint "samfshalcnv-part4-input"
       !$ser data ix=ix im=im km=km
+      !$ser data cnvw=cnvw dt_mf=dt_mf kbot=kbot kcnv=kcnv
       !$ser data islimsk=islimsk qtr=qtr q1=q1 t1=t1 u1=u1 v1=v1
       !$ser data ktop=ktop rn=rn cnvc=cnvc ud_mf=ud_mf kb=kb
       !$ser data kbcon=kbcon ktcon=ktcon kmax=kmax del=del delhbar=delhbar
