@@ -73,23 +73,9 @@ def stencil_static0(
     k_idx: FIELD_INT,
     kpbl: FIELD_INT,
     kmax: FIELD_INT,
-    #dz: FIELD_FLOAT,
     zo: FIELD_FLOAT,
-    #dp: FIELD_FLOAT,
-    #es: FIELD_FLOAT,
     to: FIELD_FLOAT,
-    #pprime: FIELD_FLOAT,
-    #qs: FIELD_FLOAT,
-    #dqsdp: FIELD_FLOAT,
-    #desdt: FIELD_FLOAT,
-    #dqsdt: FIELD_FLOAT,
-    #fact1: DTYPE_FLOAT,
-    #fact2: DTYPE_FLOAT,
-    #gamma: FIELD_FLOAT,
-    #el2orc: DTYPE_FLOAT,
     qeso: FIELD_FLOAT,
-    #dt: FIELD_FLOAT,
-    #dq: FIELD_FLOAT,
     qo: FIELD_FLOAT,
     po: FIELD_FLOAT,
     uo: FIELD_FLOAT,
@@ -188,24 +174,13 @@ def stencil_static1(
     k_idx: FIELD_INT,
     kbm: FIELD_INT,
     kb: FIELD_INT,
-    heo: FIELD_FLOAT,
-    #heo_kb: FIELD_FLOAT,
+    heo_kb: FIELD_FLOAT,
     heso: FIELD_FLOAT
 ):
     with computation(PARALLEL), interval(...):
         flg = cnvflg
         if(flg):
             kbcon = kmax
-    
-    with computation(FORWARD), interval(...):
-        heo_kb = heo
-        if(k_idx != 1):
-            heo_kb = heo_kb[0,0,-1]
-        if(k_idx == kb):
-            heo_kb = heo
-    
-    with computation(BACKWARD), interval(0,-1):
-        heo_kb = heo_kb[0,0,1]
 
     with computation(FORWARD), interval(1,-1):
         kbcon = kbcon[0,0,-1]
@@ -235,7 +210,7 @@ def stencil_static1(
 def stencil_static2(
     cnvflg: FIELD_INT,
     pdot: FIELD_FLOAT,
-    dot: FIELD_FLOAT,
+    dot_kbcon: FIELD_FLOAT,
     islimsk: FIELD_INT,
     k_idx: FIELD_INT,
     kbcon: FIELD_INT,
@@ -258,41 +233,16 @@ def stencil_static2(
     #cinpcr: FIELD_FLOAT,
     # cinpcrmx: DTYPE_FLOAT,
     # cinpcrmn: DTYPE_FLOAT,
-    pfld: FIELD_FLOAT
+    #pfld: FIELD_FLOAT
     #tem1: FIELD_FLOAT,
-    #pfld_kb: FIELD_FLOAT,
-    #pfld_kbcon: FIELD_FLOAT
+    pfld_kb: FIELD_FLOAT,
+    pfld_kbcon: FIELD_FLOAT
 ):
-    with computation(FORWARD), interval(...):
-        dot_kbcon = dot
-        if(k_idx != 1):
-            dot_kbcon = dot_kbcon[0,0,-1]
-        if(k_idx == kbcon):
-            dot_kbcon = dot
-
-    with computation(BACKWARD), interval(0,-1):
-        dot_kbcon = dot_kbcon[0,0,1]
-
     with computation(PARALLEL), interval(...):
         if(cnvflg):
 #to use dotkbcon to represent dot(i,kbcon(i))
 #            pdot(i)  = 10.* dotkbcon
             pdot[0,0,0]  = 0.01 * dot_kbcon # Now dot is in Pa/s
-
-    with computation(FORWARD), interval(...):
-        pfld_kb = pfld
-        pfld_kbcon = pfld
-        if(k_idx != 1):
-            pfld_kb = pfld_kb[0,0,-1]
-            pfld_kbcon = pfld_kbcon[0,0,-1]
-        if(k_idx == kb):
-            pfld_kb = pfld
-        if(k_idx == kbcon):
-            pfld_kbcon = pfld
-    
-    with computation(BACKWARD), interval(0,-1):
-        pfld_kb = pfld_kb[0,0,1]
-        pfld_kbcon = pfld_kbcon[0,0,1]
 
     with computation(PARALLEL), interval(...):
         w1 = w1s
@@ -577,66 +527,52 @@ def stencil_ntrstatic2(
                 dz   = zi - zi[0,0,-1]
                 tem  = 0.25 * (xlamue+xlamue[0,0,-1]) * dz
                 factor = 1. + tem
-                ecko = ((1.-tem)*ecko[0,0,-1]+tem* \
+                ecko = ((1.-tem)*ecko[0,0,-1]+tem*
                                 (ctro+ctro[0,0,-1]))/factor
 ## enddo 
-## pass
 @gtscript.stencil(backend=BACKEND, rebuild=REBUILD)
-def stencil_static9(
+def stencil_update_kbcon1_cnvflg(
+    dbyo: FIELD_FLOAT,
     cnvflg: FIELD_INT,
-    flg: FIELD_INT,
-    kbcon1: FIELD_INT,
     kmax: FIELD_INT,
-    k_idx: FIELD_INT,
     kbm: FIELD_INT,
     kbcon: FIELD_INT,
-    dbyo: FIELD_FLOAT,
-    # tem: FIELD_FLOAT,
-    #dthk: DTYPE_FLOAT,
-    pfld: FIELD_FLOAT,
-    # pfld_kbcon: FIELD_FLOAT,
-    # pfld_kbcon1: FIELD_FLOAT,
+    kbcon1: FIELD_INT,
+    flg: FIELD_INT,
+    k_idx: FIELD_INT
 ):
     with computation(PARALLEL), interval(...):
         flg = cnvflg
         kbcon1 = kmax
 
-    with computation(FORWARD), interval(1,-1):
-        flg = flg[0,0,-1]
+    with computation(FORWARD), interval(1, -1):
+        flg = flg[0, 0, -1]
         if (flg and k_idx < kbm):
-            if(k_idx >= kbcon and dbyo > 0.):
+            if (k_idx >= kbcon and dbyo > 0.):
                 kbcon1 = k_idx
-                flg    = 0
+                flg = 0
 
-## to make all slice like the final slice
-    with computation(FORWARD), interval(-1,None):
-        flg = flg[0,0,-1]
-        kbcon1 = kbcon1[0,0,-1]
-    with computation(BACKWARD), interval(0,-1):
-        flg = flg[0,0,1]
-        kbcon1 = kbcon1[0,0,1]
+    ## to make all slice like the final slice
+    with computation(FORWARD), interval(-1, None):
+        flg = flg[0, 0, -1]
+        kbcon1 = kbcon1[0, 0, -1]
+    with computation(BACKWARD), interval(0, -1):
+        flg = flg[0, 0, 1]
+        kbcon1 = kbcon1[0, 0, 1]
 
-
-    with computation(PARALLEL),interval(...):
-        if(cnvflg):
-            if(kbcon1 == kmax):
+    with computation(PARALLEL), interval(...):
+        if (cnvflg):
+            if (kbcon1 == kmax):
                 cnvflg = 0
 
-    with computation(FORWARD), interval(...):
-        pfld_kbcon = pfld
-        pfld_kbcon1 = pfld
-        if(k_idx != 1):
-            pfld_kbcon = pfld_kbcon[0,0,-1]
-            pfld_kbcon1 = pfld_kbcon1[0,0,-1]
-        if(k_idx == kbcon):
-            pfld_kbcon = pfld
-        if(k_idx == kbcon1):
-            pfld_kbcon1 = pfld
-    
-    with computation(BACKWARD), interval(0,-1):
-        pfld_kbcon = pfld_kbcon[0,0,1]
-        pfld_kbcon1 = pfld_kbcon1[0,0,1]
 
+## pass
+@gtscript.stencil(backend=BACKEND, rebuild=REBUILD)
+def stencil_static9(
+    cnvflg: FIELD_INT,
+    pfld_kbcon: FIELD_FLOAT,
+    pfld_kbcon1: FIELD_FLOAT,
+):
     with computation(PARALLEL),interval(...):
         tem = 0.
         if(cnvflg):
@@ -659,26 +595,10 @@ def stencil_static10(
     kbcon1: FIELD_INT,
     #dz1: FIELD_FLOAT,
     zo: FIELD_FLOAT,
-    #gamma: FIELD_FLOAT,
-    #el2orc: DTYPE_FLOAT,
     qeso: FIELD_FLOAT,
     to: FIELD_FLOAT,
-    #rfact: FIELD_FLOAT,
-    #delta: DTYPE_FLOAT,
     dbyo: FIELD_FLOAT,
     qo: FIELD_FLOAT,
-    # w1: FIELD_FLOAT,
-    # w2: FIELD_FLOAT,
-    # w3: FIELD_FLOAT,
-    # w4: FIELD_FLOAT,
-    # w1l: DTYPE_FLOAT,
-    # w2l: DTYPE_FLOAT,
-    # w3l: DTYPE_FLOAT,
-    # w4l: DTYPE_FLOAT,
-    # w1s: DTYPE_FLOAT,
-    # w2s: DTYPE_FLOAT,
-    # w3s: DTYPE_FLOAT,
-    # w4s: DTYPE_FLOAT,
     pdot: FIELD_FLOAT,
     #tem: FIELD_FLOAT,
     #tem1: FIELD_FLOAT,
@@ -702,7 +622,7 @@ def stencil_static10(
 #               val = 0.
                 cina = (cina +
 #    &                 dz1 * eta(i,k_idx) * g * delta *
-                        dz1 * g * delta * \
+                        dz1 * g * delta *
                         (qeso - qo)) if ((qeso - qo)>0.) else cina
 
 ## to make all slices like the final slice    
@@ -760,7 +680,6 @@ def stencil_static11(
     kbcon1: FIELD_INT,
     dbyo: FIELD_FLOAT,
     kbcon: FIELD_INT,
-    #dp: FIELD_FLOAT,
     del0: FIELD_FLOAT,
     xmbmax: FIELD_FLOAT,
     dt2: DTYPE_FLOAT,
@@ -769,33 +688,20 @@ def stencil_static11(
     qcko: FIELD_FLOAT,
     qo: FIELD_FLOAT,
     qrcko: FIELD_FLOAT,
-    #dz: FIELD_FLOAT,
     zi: FIELD_FLOAT,
-    #gamma: FIELD_FLOAT,
-    #el2orc: DTYPE_FLOAT,
     qeso: FIELD_FLOAT,
     to: FIELD_FLOAT,
-    #tem: FIELD_FLOAT,
-    #tem1: FIELD_FLOAT,
     xlamue: FIELD_FLOAT,
     xlamud: FIELD_FLOAT,
     #factor: FIELD_FLOAT,
     eta: FIELD_FLOAT,
-    #dq: FIELD_FLOAT,
-    #qrch: FIELD_FLOAT,
-    #etah: FIELD_FLOAT,
-    #ptem: FIELD_FLOAT,
     c0t: FIELD_FLOAT,
     c1: DTYPE_FLOAT,
-    #qlk: FIELD_FLOAT,
     dellal: FIELD_FLOAT,
     buo: FIELD_FLOAT,
-    #rfact: FIELD_FLOAT,
     drag: FIELD_FLOAT,
     zo: FIELD_FLOAT,
-    #delta: DTYPE_FLOAT,
     k_idx: FIELD_INT,
-    #dz1: FIELD_FLOAT,
     pwo: FIELD_FLOAT,
     cnvwt: FIELD_FLOAT,
     ncloud: DTYPE_INT
@@ -869,7 +775,7 @@ def stencil_static11(
                 tem  = 0.5 * (xlamue+xlamue[0,0,-1]) * dz
                 tem1 = 0.5 * xlamud * dz
                 factor = 1. + tem - tem1
-                qcko = ((1.-tem1)*qcko[0,0,-1]+tem*0.5* \
+                qcko = ((1.-tem1)*qcko[0,0,-1]+tem*0.5*
                             (qo+qo[0,0,-1]))/factor
                 qrcko = qcko
     #j
@@ -1056,7 +962,7 @@ def stencil_static12(
                 tem  = 0.5 * (xlamue+xlamue[0,0,-1]) * dz
                 tem1 = 0.5 * xlamud * dz
                 factor = 1. + tem - tem1
-                qcko = ((1.-tem1)*qcko[0,0,-1]+tem*0.5* \
+                qcko = ((1.-tem1)*qcko[0,0,-1]+tem*0.5*
                             (qo+qo[0,0,-1]))/factor
                 qrcko = qcko
 #j
@@ -1237,10 +1143,3 @@ def stencil_static14(
             edt = edt if(edt < .9) else .9
 #           val =         .0
             edt = edt if(edt > .0) else .0
-
-
-@gtscript.stencil(name="test.stencil", backend="numpy")
-def copy_stencil(in_field: gtscript.Field[float], out_field: gtscript.Field[float]):
-    from __gtscript__ import computation, interval, PARALLEL
-    with computation(PARALLEL), interval(...):
-        out_field = in_field
