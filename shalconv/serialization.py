@@ -69,9 +69,15 @@ def numpy_dict_to_gt4py_dict(data_dict, backend = BACKEND):
 def compare_data(exp_data, ref_data):
     assert set(exp_data.keys()) == set(ref_data.keys()), \
         "Entries of exp and ref dictionaries don't match"
+    wrong = []
+    flag = True
     for key in ref_data:
-        assert np.allclose(exp_data[key], ref_data[key], equal_nan=True), \
-            "Data from exp and ref does not match for field " + key
+        if not np.allclose(exp_data[key], ref_data[key], equal_nan=True):
+            wrong.append(key)
+            flag = False
+        else:
+            print(f"Succefully validate {key}!")
+    assert flag, f"Data from exp and ref does not match for field {wrong}"
 
 def read_data(tile, is_in, path = "./data"):
     """

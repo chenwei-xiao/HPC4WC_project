@@ -32,7 +32,7 @@ program samfshalconv_serialize
     !$ser init directory='DATAPATH' prefix='Serialized' prefix_ref='Generator' mpi_rank=0
 
     !$ser mode read
-    !$ser savepoint samfshalcnv-in-000000
+    !$ser savepoint  QUOTATION samfshalcnv-in-000000 QUOTATION
     !$ser data im=im ix=ix km=km itc=itc ntc=ntc ntk=ntk ntr=ntr ncloud=ncloud
 
     allocate(psp(im), delp(ix,km), prslp(ix,km), garea(im), hpbl(im), dot(ix,km), &
@@ -481,6 +481,21 @@ program samfshalconv_serialize
           endif
         enddo
       enddo
+
+      !$ser mode write
+      !$ser savepoint  QUOTATION samfshalcnv-part2-input QUOTATION
+      !$ser data ix=ix im=im km=km
+      !$ser data cnvwt=cnvwt dellal=dellal ktconn=ktconn pwo=pwo !output
+      !$ser data qlko_ktcon=qlko_ktcon qrcko=qrcko xmbmax=xmbmax !output
+      !$ser data islimsk=islimsk dot=dot qtr=qtr kpbl=kpbl kb=kb
+      !$ser data kbcon=kbcon kbcon1=kbcon1 ktcon=ktcon ktcon1=ktcon1
+      !$ser data kbm=kbm kmax=kmax aa1=aa1 cina=cina tkemean=tkemean
+      !$ser data clamt=clamt del=del edt=edt pdot=pdot po=po hmax=hmax
+      !$ser data vshear=vshear xlamud=xlamud pfld=pfld
+      !$ser data to=to qo=qo uo=uo vo=vo qeso=qeso ctro=ctro wu2=wu2
+      !$ser data buo=buo drag=drag wc=wc dbyo=dbyo zo=zo xlamue=xlamue
+      !$ser data heo=heo heso=heso hcko=hcko ucko=ucko vcko=vcko qcko=qcko ecko=ecko
+      !$ser data eta=eta zi=zi c0t=c0t sumx=sumx cnvflg=cnvflg flg=flg
 !
 !  determine level with largest moist static energy within pbl
 !  this is the level where updraft starts
@@ -503,21 +518,6 @@ program samfshalconv_serialize
           endif
         enddo
       enddo
-
-      !$ser mode write
-      !$ser savepoint samfshalcnv-part2-input
-      !$ser data ix=ix im=im km=km
-      !$ser data cnvwt=cnvwt dellal=dellal ktconn=ktconn pwo=pwo !output
-      !$ser data qlko_ktcon=qlko_ktcon qrcko=qrcko xmbmax=xmbmax !output
-      !$ser data islimsk=islimsk dot=dot qtr=qtr kpbl=kpbl kb=kb
-      !$ser data kbcon=kbcon kbcon1=kbcon1 ktcon=ktcon ktcon1=ktcon1
-      !$ser data kbm=kbm kmax=kmax aa1=aa1 cina=cina tkemean=tkemean
-      !$ser data clamt=clamt del=del edt=edt pdot=pdot po=po hmax=hmax
-      !$ser data vshear=vshear xlamud=xlamud pfld=pfld
-      !$ser data to=to qo=qo uo=uo vo=vo qeso=qeso ctro=ctro wu2=wu2
-      !$ser data buo=buo drag=drag wc=wc dbyo=dbyo zo=zo xlamue=xlamue
-      !$ser data heo=heo heso=heso hcko=hcko ucko=ucko vcko=vcko qcko=qcko ecko=ecko
-      !$ser data eta=eta zi=zi c0t=c0t sumx=sumx cnvflg=cnvflg flg=flg
 
 !
 !> - Calculate the temperature, water vapor mixing ratio, and pressure at interface levels.
@@ -571,6 +571,12 @@ program samfshalconv_serialize
         enddo
       enddo
       enddo
+
+      !$ser mode write
+      !$ser savepoint  QUOTATION samfshalcnv-part2-1 QUOTATION
+      !$ser data ix=ix km=km
+      !$ser data hmax=hmax heo=heo heso=heso kb=kb
+      !$ser data to=to qeso=qeso po=po qo=qo uo=uo vo=vo
 !
 !  look for the level of free convection as cloud base
 !
@@ -647,6 +653,12 @@ program samfshalconv_serialize
           endif
         endif
       enddo
+
+      !$ser mode write
+      !$ser savepoint  QUOTATION samfshalcnv-part2-2 QUOTATION
+      !$ser data ix=ix km=km
+      !$ser data cnvflg=cnvflg pdot=pdot
+
 !!
       totflg = .true.
       do i=1,im
@@ -795,6 +807,15 @@ program samfshalconv_serialize
           endif
         enddo
       enddo
+
+      !$ser mode write
+      !$ser savepoint  QUOTATION samfshalcnv-part2-3 QUOTATION
+      !$ser data ix=ix km=km
+      !$ser data clamt=clamt xlamud=xlamud xlamue=xlamue eta=eta
+      !$ser data kmax=kmax kbm=kbm hcko=hcko ucko=ucko vcko=vcko
+      !$ser data tkemean=tkemean sumx=sumx
+      !$ser data cnvflg=cnvflg kb=kb zi=zi heo=heo dbyo=dbyo
+      !$ser data heso=heso pgcon=pgcon uo=uo vo=vo
 !
 !  cm is an enhancement factor in entrainment rates for momentum
 !
@@ -838,6 +859,13 @@ program samfshalconv_serialize
         enddo
       enddo
       enddo
+
+      !$ser mode write
+      !$ser savepoint  QUOTATION samfshalcnv-part2-4 QUOTATION
+      !$ser data ix=ix km=km
+      !$ser data hcko=hcko dbyo=dbyo ucko=ucko vcko=vcko
+      !$ser data cnvflg=cnvflg kmax=kmax kbm=kbm kbcon=kbcon
+      !$ser data kbcon1=kbcon1 flg=flg pfld=pfld
 !
 !   taking account into convection inhibition due to existence of
 !    dry layers below cloud base
@@ -870,6 +898,14 @@ program samfshalconv_serialize
           endif
         endif
       enddo
+
+      !$ser mode write
+      !$ser savepoint  QUOTATION samfshalcnv-part2-5 QUOTATION
+      !$ser data ix=ix km=km
+      !$ser data cnvflg=cnvflg kbcon1=kbcon1 flg=flg
+      !$ser data cina=cina kb=kb zo=zo qeso=qeso to=to
+      !$ser data dbyo=dbyo qo=qo pdot=pdot islimsk=islimsk
+
 !!
       totflg = .true.
       do i = 1, im
@@ -938,6 +974,11 @@ program samfshalconv_serialize
           if(cina(i) < cinacr) cnvflg(i) = .false.
         endif
       enddo
+
+      !$ser mode write
+      !$ser savepoint  QUOTATION samfshalcnv-part2-6 QUOTATION
+      !$ser data ix=ix km=km
+      !$ser data cnvflg=cnvflg cina=cina
 !!
       totflg = .true.
       do i=1,im
@@ -1350,7 +1391,7 @@ program samfshalconv_serialize
 !> ## Calculate the tendencies of the state variables (per unit cloud base mass flux) and the cloud base mass flux.
 !> - Calculate the change in moist static energy, moisture mixing ratio, and horizontal winds per unit cloud base mass flux for all layers below cloud top from equations B.14 and B.15 from Grell (1993) \cite grell_1993, and for the cloud top from B.16 and B.17.
       !$ser mode write
-      !$ser savepoint samfshalcnv-part3-input
+      !$ser savepoint  QUOTATION samfshalcnv-part3-input QUOTATION
       !$ser data ix=ix im=im km=km
       !$ser data dellal=dellal !output
       !$ser data delp=delp garea=garea qtr=qtr u1=u1 v1=v1
@@ -1576,7 +1617,7 @@ program samfshalconv_serialize
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
       !$ser mode write
-      !$ser savepoint samfshalcnv-part4-input
+      !$ser savepoint  QUOTATION samfshalcnv-part4-input QUOTATION
       !$ser data ix=ix im=im km=km
       !$ser data cnvw=cnvw dt_mf=dt_mf kbot=kbot kcnv=kcnv
       !$ser data islimsk=islimsk qtr=qtr q1=q1 t1=t1 u1=u1 v1=v1
