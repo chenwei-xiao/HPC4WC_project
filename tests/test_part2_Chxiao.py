@@ -74,8 +74,9 @@ def samfshalcnv_part2(data_dict):
     
     if exit_routine(cnvflg, im): return
 
+    dt2 = delt
     stencil_static11( flg, cnvflg, ktcon, kbm, kbcon1, dbyo, kbcon, del0, xmbmax,
-                     delt, aa1, kb, qcko, qo, qrcko, zi, el2orc, qeso, to, xlamue, 
+                     dt2, aa1, kb, qcko, qo, qrcko, zi, el2orc, qeso, to, xlamue, 
                      xlamud, eta, c0t, c1, dellal, buo, drag, zo, k_idx, pwo,
                      cnvwt)
     
