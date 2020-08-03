@@ -5,6 +5,7 @@ from shalconv.funcphys import fpvsx_gt as fpvs
 from . import *
 
 from shalconv.physcons import (
+    con_g     as g,
     con_cp    as cp,
     con_hvap  as hvap,
     con_rv    as rv,
@@ -16,6 +17,7 @@ from shalconv.physcons import (
     con_eps   as eps,
     con_epsm1 as epsm1
 )
+
 elocp      = hvap/cp
 el2orc     = hvap * hvap/(rv * cp)
 d0         = 0.001
