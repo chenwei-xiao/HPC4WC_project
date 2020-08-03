@@ -1,11 +1,9 @@
 import numpy as np
 import gt4py as gt
-from . import BACKEND, DTYPE_FLOAT, DTYPE_INT
+from . import BACKEND, DTYPE_FLOAT, DTYPE_INT, SERIALBOX_DIR
 from copy import deepcopy
 
 import sys
-SERIALBOX_DIR = "/usr/local/serialbox"
-#SERIALBOX_DIR = "/project/c14/install/daint/serialbox2_master/gnu_debug"
 sys.path.append(SERIALBOX_DIR + "/python")
 import serialbox as ser
 

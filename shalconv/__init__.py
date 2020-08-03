@@ -1,10 +1,11 @@
 import numpy as np
 from gt4py import gtscript
 
-DATAPATH    = "/data"
-BACKEND     = "numpy"#"gtx86"
-REBUILD     = True
-BACKEND_OPTS = {'verbose': True} if BACKEND.startswith('gt') else {}
+DATAPATH       = "/scratch/snx3000/course20/physics_standalone/shalconv/data"#"/data"
+SERIALBOX_DIR  = "/project/c14/install/daint/serialbox2_master/gnu_debug"#"/usr/local/serialbox"
+BACKEND        = "numpy"#"gtx86"
+REBUILD        = True
+BACKEND_OPTS   = {'verbose': True} if BACKEND.startswith('gt') else {}
 default_origin = (0, 0, 0)
 
 DTYPE_INT   = np.int32
