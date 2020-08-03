@@ -75,6 +75,8 @@ def compare_data(exp_data, ref_data):
         if not np.allclose(exp_data[key], ref_data[key], equal_nan=True):
             wrong.append(key)
             flag = False
+        else:
+            print(f"Succefully validate {key}!")
     assert flag, f"Data from exp and ref does not match for field {wrong}"
 
 def read_data(tile, is_in, path = "./data"):

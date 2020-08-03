@@ -21,7 +21,7 @@ from shalconv.physcons import (
     con_e     as e
 )
 
-def samfshalcnv_part2(ix,km,clam,pgcon,delt,c1,
+def samfshalcnv_part2(ix,km,clam,pgcon,delt,c1,ncloud,
                       kpbl,kb,kbcon,kbcon1,ktcon,ktcon1,kbm,kmax,
                       po,to,qo,uo,vo,qeso,dbyo,zo,
                       heo,heso,hcko,ucko,vcko,qcko,
@@ -82,13 +82,13 @@ def samfshalcnv_part2(ix,km,clam,pgcon,delt,c1,
     stencil_static11(flg, cnvflg, ktcon, kbm, kbcon1, dbyo, kbcon, del0, xmbmax,
                      dt2, aa1, kb, qcko, qo, qrcko, zi, el2orc, qeso, to, xlamue, 
                      xlamud, eta, c0t, c1, dellal, buo, drag, zo, k_idx, pwo,
-                     cnvwt)
+                     cnvwt, ncloud)
     
     if exit_routine(cnvflg, ix): return
 
     stencil_static12(cnvflg, aa1, flg, ktcon1, kbm, k_idx, ktcon, zo, qeso, 
                      to, dbyo, zi, xlamue, xlamud, qcko, qrcko, qo, eta, del0,
-                     c0t, c1, pwo, cnvwt, buo, wu2, wc, sumx, kbcon1, drag, dellal)
+                     c0t, c1, pwo, cnvwt, buo, wu2, wc, sumx, kbcon1, drag, dellal, ncloud)
 
     
     #if(ncloud > 0):
@@ -101,6 +101,7 @@ def apply_arguments_part2(input_dict, data_dict):
     pgcon = input_dict['pgcon']
     delt = input_dict['delt']
     c1 = input_dict['c1']
+    ncloud = input_dict['ncloud']
     ix = data_dict['ix']
     km = data_dict['km']
     islimsk = data_dict['islimsk']
@@ -166,7 +167,7 @@ def apply_arguments_part2(input_dict, data_dict):
     pfld_kbcon = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
     pfld_kb = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
     pfld_kbcon1 = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
-    samfshalcnv_part2(ix, km, clam, pgcon, delt, c1,
+    samfshalcnv_part2(ix, km, clam, pgcon, delt, c1, ncloud,
                       kpbl, kb, kbcon, kbcon1, ktcon, ktcon1, kbm, kmax,
                       po, to, qo, uo, vo, qeso, dbyo, zo,
                       heo, heso, hcko, ucko, vcko, qcko,
@@ -175,7 +176,7 @@ def apply_arguments_part2(input_dict, data_dict):
                       eta, zi, c0t, sumx, cnvflg, flg, islimsk, dot,
                       k_idx, heo_kb, dot_kbcon, pfld_kbcon, pfld_kb, pfld_kbcon1,
                       cnvwt, dellal, ktconn, pwo, qlko_ktcon, qrcko, xmbmax)
-    return cnvwt, dellal, pwo, qlko_ktcon, qrcko, xmbmax
+    return cnvflg, kmax, kbcon, kbcon1, cnvwt, dellal, ecko, pwo, qlko_ktcon, qrcko, xmbmax
 
 def view_gt4pystorage(data_dict):
     new_data_dict = {}
@@ -189,10 +190,15 @@ def test_part2():
     data_dict = read_serialization_part2()
     out_dict_p3 = read_serialization_part3()
     out_dict_p4 = read_serialization_part4()
-    cnvwt, dellal, pwo, qlko_ktcon, qrcko, xmbmax = apply_arguments_part2(input_dict, data_dict)
-    exp_data = view_gt4pystorage({"cnvwt":cnvwt, "dellal":dellal, "pwo":pwo,
+    cnvflg, kmax, kbcon, kbcon1, cnvwt, dellal, ecko, pwo, qlko_ktcon, qrcko, xmbmax = apply_arguments_part2(input_dict, data_dict)
+    exp_data = view_gt4pystorage({"cnvflg":cnvflg, "ecko":ecko,
+                "kmax":kmax, "kbcon": kbcon, "kbcon1":kbcon1,
+                "cnvwt":cnvwt, "dellal":dellal, "pwo":pwo,
                 "qlko_ktcon":qlko_ktcon, "qrcko":qrcko, "xmbmax":xmbmax})
-    ref_data = view_gt4pystorage({"cnvwt":out_dict_p4["cnvwt"], "dellal":out_dict_p3["dellal"],
+    ref_data = view_gt4pystorage({"cnvflg":out_dict_p3["cnvflg"],
+                "ecko":out_dict_p3["ecko"],"kmax":out_dict_p3["kmax"],
+                "kbcon":out_dict_p3["kbcon"],"kbcon1":out_dict_p3["kbcon1"],
+                "cnvwt":out_dict_p4["cnvwt"], "dellal":out_dict_p3["dellal"],
                 "pwo": out_dict_p4["pwo"], "qlko_ktcon": out_dict_p3["qlko_ktcon"],
                 "qrcko":out_dict_p3["qrcko"],"xmbmax":out_dict_p3["xmbmax"]})
     compare_data(exp_data, ref_data)
