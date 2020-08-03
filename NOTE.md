@@ -24,3 +24,5 @@
 19. `fpvs(to);to=t1` -> `fpvs(t1)`
 20. delete `fscav` in part3 serialization and delete `delebar` in part4
 21. Solve interval problem for stencil_part34.py line 182
+22. notice argument position!
+23. notice bound for forward-backward propagation

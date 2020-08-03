@@ -1,5 +1,5 @@
 import sys, os
-from shalconv import DATAPATH, SERIALBOX_DIR
+from shalconv import DATAPATH, SERIALBOX_DIR, ISDOCKER
 sys.path.append(SERIALBOX_DIR + "/python")
 import serialbox as ser
 
@@ -19,7 +19,6 @@ LDFLAGS = f"{SERIALBOX_DIR}/lib/libSerialboxFortran.a {SERIALBOX_DIR}/lib/libSer
             -lnetcdff -lnetcdf -lpthread -lstdc++ -lstdc++fs"
 
 datapath = DATAPATH
-print(datapath)
 outputfile = "fortran/samfshalconv_generated.f90"
 templatefile = "fortran/samfshalconv_serialize.template.f90"
 inputfile = "fortran/samfshalconv_serialize.f90"
@@ -27,6 +26,11 @@ objfile = "fortran/samfshalconv_generated.o"
 targetfile = "fortran/samfshalconv_generated.x"
 with open(templatefile,"r") as f:
     filestr = f.read().replace("DATAPATH",datapath)
+    if ISDOCKER:
+        filestr = filestr.replace(" QUOTATION ",'"')
+        filestr = filestr.replace(" QUOTATION", '"')
+    else:
+        filestr = filestr.replace("QUOTATION", '')
     with open(inputfile,"w") as fw:
         fw.write(filestr)
 os.system(f"{SERIALBOX_DIR}/python/pp_ser/pp_ser.py --no-prefix -v --output={outputfile} {inputfile}")

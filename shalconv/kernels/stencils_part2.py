@@ -87,17 +87,18 @@ def stencil_static0(
     Scale-Aware Mass-Flux Shallow Convection
     :to use the k_idx[1,0:im,0:km] as storage of 1 to k_idx index.
     """
-    with computation(PARALLEL), interval(...):
-        if cnvflg[0,0,0]:
-            hmax=heo[0,0,0]
-            kb=1
+    with computation(FORWARD), interval(0,1):
+        if cnvflg == 1:
+            hmax = heo
+            kb = 1
 
     with computation(FORWARD), interval(1,None):
         hmax = hmax[0,0,-1]
-        if (cnvflg[0,0,0] and k_idx[0,0,0] <= kpbl[0,0,0]):
-                if(heo[0,0,0] > hmax[0,0,0]):
-                    kb   = k_idx[0,0,0]
-                    hmax = heo[0,0,0]
+        kb = kb[0,0,-1]
+        if (cnvflg == 1) and (k_idx <= kpbl):
+                if(heo > hmax):
+                    kb   = k_idx
+                    hmax = heo
 # to make all slice like the final slice    
     with computation(BACKWARD), interval(0,-1):
         kb = kb[0,0,1]
@@ -153,16 +154,16 @@ def stencil_static0(
 
 ## ntr stencil put at last
 
-# @gtscript.stencil(backend=BACKEND,externals=externals, rebuild=REBUILD, **BACKEND_OPTS)
-# def stencil_ntrstatic0(
-#     cnvflg: FIELD_INT,
-#     k_idx: FIELD_INT,
-#     kmax: FIELD_INT,
-#     ctro: FIELD_FLOAT
-# ):
-#     with computation(FORWARD), interval(0,-1):
-#         if(cnvflg and k_idx <= (kmax-1)):
-#             ctro = .5 * (ctro + ctro[0,0,1])
+@gtscript.stencil(backend=BACKEND,externals=externals, rebuild=REBUILD, **BACKEND_OPTS)
+def stencil_ntrstatic0(
+     cnvflg: FIELD_INT,
+     k_idx: FIELD_INT,
+     kmax: FIELD_INT,
+     ctro: FIELD_FLOAT
+ ):
+     with computation(FORWARD), interval(0,-1):
+         if (cnvflg == 1 )and (k_idx <= (kmax-1)):
+             ctro = .5 * (ctro + ctro[0,0,1])
 
 
 @gtscript.stencil(backend=BACKEND, rebuild=REBUILD)
@@ -215,26 +216,6 @@ def stencil_static2(
     k_idx: FIELD_INT,
     kbcon: FIELD_INT,
     kb: FIELD_INT,
-    # w1: FIELD_FLOAT,
-    # w2: FIELD_FLOAT,
-    # w3: FIELD_FLOAT,
-    # w4: FIELD_FLOAT,
-    # w1l: DTYPE_FLOAT,
-    # w2l: DTYPE_FLOAT,
-    # w3l: DTYPE_FLOAT,
-    # w4l: DTYPE_FLOAT,
-    # w1s: DTYPE_FLOAT,
-    # w2s: DTYPE_FLOAT,
-    # w3s: DTYPE_FLOAT,
-    # w4s: DTYPE_FLOAT,
-    #tem: FIELD_FLOAT,
-    #ptem: FIELD_FLOAT,
-    #ptem1: FIELD_FLOAT,
-    #cinpcr: FIELD_FLOAT,
-    # cinpcrmx: DTYPE_FLOAT,
-    # cinpcrmn: DTYPE_FLOAT,
-    #pfld: FIELD_FLOAT
-    #tem1: FIELD_FLOAT,
     pfld_kb: FIELD_FLOAT,
     pfld_kbcon: FIELD_FLOAT
 ):
@@ -286,40 +267,41 @@ def stencil_static3(
     k_idx: FIELD_INT,
     kb: FIELD_INT,
     kbcon: FIELD_INT,
-    #dz: FIELD_FLOAT,
     zo: FIELD_FLOAT,
-    #tem: FIELD_FLOAT,
     qtr: FIELD_FLOAT,
-    # tkemn: DTYPE_FLOAT,
-    # tkemx: DTYPE_FLOAT,
     clamt: FIELD_FLOAT,
     clam: DTYPE_FLOAT
-    # clamd: DTYPE_FLOAT,
-    #tem1: FIELD_FLOAT,
-    # dtke: DTYPE_FLOAT
 ):
-    with computation(PARALLEL), interval(...):
-        sumx = 0.
-        tkemean = 0.
+    with computation(BACKWARD), interval(-1, None):
+        if cnvflg == 1:
+            sumx = 0.
+            tkemean = 0.
     
-    with computation(FORWARD), interval(0,-1):
+    with computation(BACKWARD), interval(0, -1):
         dz = 0.
         tem = 0.
+        tkemean = tkemean[0, 0, 1]
+        sumx = sumx[0, 0, 1]
         if(cnvflg):
-            if(k_idx >= kb and k_idx < kbcon):
+            if(k_idx >= kb) and (k_idx < kbcon):
                 dz = zo[0,0,1] - zo[0,0,0]
                 tem = 0.5 * (qtr[0,0,0]+qtr[0,0,1])
-                tkemean = tkemean + tem * dz #dz, tem to be 3d
-                sumx = sumx + dz
+                tkemean = tkemean[0,0,1] + tem * dz #dz, tem to be 3d
+                sumx = sumx[0,0,1] + dz
+    with computation(FORWARD), interval(1, None):
+        tkemean = tkemean[0,0,-1]
+        sumx = sumx[0,0,-1]
 
     with computation(PARALLEL), interval(...):
+        tkemean = tkemean / sumx
+        tem1 = 1. - 2. * (tkemx - tkemean) / dtke
         if cnvflg:
-            tkemean = tkemean / sumx
             if tkemean > tkemx:  # tkemx, clam, clamd, tkemnm, dtke to be 3d
                 clamt = clam + clamd
             elif tkemean < tkemn:
                 clamt = clam - clamd
-            clamt = (clam + clamd + 1.0 - 2.0 * (tkemx - tkemean) / dtke) if (not tkemean) > tkemx and (not tkemean < tkemn) else clamt
+            else:
+                clamt = clam + clamd * tem1
 
 ## else :
 @gtscript.stencil(backend=BACKEND, rebuild=REBUILD)
@@ -429,26 +411,8 @@ def stencil_ntrstatic1(
     ctro: FIELD_FLOAT
 ):
     with computation(PARALLEL), interval(...):
-        if(cnvflg and k_idx == kb):
+        if (cnvflg == 1) and (k_idx == kb):
             ecko = ctro
-
-
-## same as ntrstatic can neglect
-# @gtscript.stencil(backend=BACKEND,externals=externals, rebuild=REBUILD, **BACKEND_OPTS)
-# def stencil_static6(
-#     cnvflg: FIELD_INT,
-#     k_idx: FIELD_INT,
-#     kb: FIELD_INT,
-#     ecko: FIELD_FLOAT,
-#     ctro: FIELD_FLOAT
-# ):
-#     with computation(PARALLEL), interval(...):
-#         if(cnvflg):
-#             #indx = kb(i)
-#             if(k_idx==kb):
-#                 ecko = ctro
-
-## end do
 
 ## Line 769
 ## Calculate the cloud properties as a parcel ascends, modified by entrainment and detrainment. Discretization follows Appendix B of Grell (1993) \cite grell_1993 . Following Han and Pan (2006) \cite han_and_pan_2006, the convective momentum transport is reduced by the convection-induced pressure gradient force by the constant "pgcon", currently set to 0.55 after Zhang and Wu (2003) \cite zhang_and_wu_2003 .
@@ -459,21 +423,14 @@ def stencil_static7(
     k_idx: FIELD_INT,
     kb: FIELD_INT,
     kmax: FIELD_INT,
-    #dz: FIELD_FLOAT,
     zi: FIELD_FLOAT,
-    #tem: FIELD_FLOAT,
     xlamue: FIELD_FLOAT,
-    #tem1: FIELD_FLOAT,
     xlamud: FIELD_FLOAT,
-    #factor: FIELD_FLOAT,
     hcko: FIELD_FLOAT,
     heo: FIELD_FLOAT,
     dbyo: FIELD_FLOAT,
     heso: FIELD_FLOAT,
-    #cm: DTYPE_FLOAT,
-    #ptem: FIELD_FLOAT,
     pgcon: DTYPE_FLOAT,
-    #ptem1: FIELD_FLOAT,
     ucko: FIELD_FLOAT,
     uo: FIELD_FLOAT,
     vcko: FIELD_FLOAT,
@@ -500,10 +457,8 @@ def stencil_static7(
                 factor = 1. + tem
                 ptem = tem + pgcon
                 ptem1= tem - pgcon
-                ucko = ((1.-tem)*ucko[0,0,-1]+ptem*uo
-                            +ptem1*uo[0,0,-1])/factor
-                vcko = ((1.-tem)*vcko[0,0,-1]+ptem*vo
-                            +ptem1*vo[0,0,-1])/factor
+                ucko = ((1.-tem)*ucko[0,0,-1]+ptem*uo + ptem1*uo[0,0,-1])/factor
+                vcko = ((1.-tem)*vcko[0,0,-1]+ptem*vo + ptem1*vo[0,0,-1])/factor
 
 ## for n = 1, ntr:
 ## pass
@@ -514,21 +469,20 @@ def stencil_ntrstatic2(
     kb: FIELD_INT,
     kmax: FIELD_INT,
     zi: FIELD_FLOAT,
-    dz: FIELD_FLOAT,
-    tem: FIELD_FLOAT,
     xlamue: FIELD_FLOAT,
-    factor: FIELD_FLOAT,
     ecko: FIELD_FLOAT,
     ctro: FIELD_FLOAT
 ):
     with computation(FORWARD), interval(1,-1):
+        tem = 0.0
+        dz = 0.0
+        factor = 0.0
         if (cnvflg):
             if(k_idx > kb and k_idx < kmax):
                 dz   = zi - zi[0,0,-1]
                 tem  = 0.25 * (xlamue+xlamue[0,0,-1]) * dz
                 factor = 1. + tem
-                ecko = ((1.-tem)*ecko[0,0,-1]+tem*
-                                (ctro+ctro[0,0,-1]))/factor
+                ecko = ((1.-tem)*ecko[0,0,-1]+tem*(ctro+ctro[0,0,-1]))/factor
 ## enddo 
 @gtscript.stencil(backend=BACKEND, rebuild=REBUILD)
 def stencil_update_kbcon1_cnvflg(
@@ -541,21 +495,18 @@ def stencil_update_kbcon1_cnvflg(
     flg: FIELD_INT,
     k_idx: FIELD_INT
 ):
-    with computation(PARALLEL), interval(...):
+    with computation(FORWARD), interval(0, 1):
         flg = cnvflg
         kbcon1 = kmax
 
-    with computation(FORWARD), interval(1, -1):
+    with computation(FORWARD), interval(1, None):
         flg = flg[0, 0, -1]
-        if (flg and k_idx < kbm):
-            if (k_idx >= kbcon and dbyo > 0.):
+        kbcon1 = kbcon1[0, 0, -1]
+        if (flg == 1) and (k_idx < kbm):
+            if (k_idx >= kbcon) and (dbyo > 0.):
                 kbcon1 = k_idx
                 flg = 0
 
-    ## to make all slice like the final slice
-    with computation(FORWARD), interval(-1, None):
-        flg = flg[0, 0, -1]
-        kbcon1 = kbcon1[0, 0, -1]
     with computation(BACKWARD), interval(0, -1):
         flg = flg[0, 0, 1]
         kbcon1 = kbcon1[0, 0, 1]
@@ -593,18 +544,12 @@ def stencil_static10(
     k_idx: FIELD_INT,
     kb: FIELD_INT,
     kbcon1: FIELD_INT,
-    #dz1: FIELD_FLOAT,
     zo: FIELD_FLOAT,
     qeso: FIELD_FLOAT,
     to: FIELD_FLOAT,
     dbyo: FIELD_FLOAT,
     qo: FIELD_FLOAT,
     pdot: FIELD_FLOAT,
-    #tem: FIELD_FLOAT,
-    #tem1: FIELD_FLOAT,
-    # cinacrmx: DTYPE_FLOAT,
-    # cinacrmn: DTYPE_FLOAT,
-    #cinacr: FIELD_FLOAT,
     islimsk: FIELD_INT
 ):
     with computation(FORWARD), interval(1,-1):
@@ -615,7 +560,7 @@ def stencil_static10(
         if (cnvflg):
             if(k_idx > kb and k_idx < kbcon1):
                 dz1 = zo[0,0,1] - zo
-                gamma = el2orc * qeso / (to**2)
+                gamma = el2orc * qeso / (to*to)
                 rfact =  1. + delta * cp * gamma * to / hvap
                 cina = cina + dz1 * (g / (cp * to)) * \
                        dbyo / (1. + gamma) * rfact
@@ -693,7 +638,6 @@ def stencil_static11(
     to: FIELD_FLOAT,
     xlamue: FIELD_FLOAT,
     xlamud: FIELD_FLOAT,
-    #factor: FIELD_FLOAT,
     eta: FIELD_FLOAT,
     c0t: FIELD_FLOAT,
     c1: DTYPE_FLOAT,
@@ -1036,30 +980,29 @@ def stencil_static13(
     cnvflg: FIELD_INT,
     k_idx: FIELD_INT,
     ktcon: FIELD_INT,
-    #gamma: FIELD_FLOAT,
-    #el2orc: DTYPE_FLOAT,
     qeso: FIELD_FLOAT,
     to: FIELD_FLOAT,
-    #qrch: FIELD_FLOAT,
     dbyo: FIELD_FLOAT,
-    #dq: FIELD_FLOAT,
     qcko: FIELD_FLOAT,
     qlko_ktcon: FIELD_FLOAT
 ):
-    with computation(PARALLEL), interval(...):
+    with computation(FORWARD), interval(1, None):
         gamma = 0.
         qrch = 0.
         dq = 0.
-        if(cnvflg):
-            k_idx = ktcon - 1
-            gamma = el2orc * qeso / (to**2)
-            qrch = qeso \
-                + gamma * dbyo / (hvap * (1. + gamma))
-            dq = qcko - qrch
+        if cnvflg == 1:
+            qlko_ktcon = qlko_ktcon[0, 0, -1]
+            if k_idx == ktcon - 1:
+                gamma = el2orc * qeso / (to*to)
+                qrch = qeso + gamma * dbyo / (hvap * (1. + gamma))
+                dq = qcko - qrch
 #  check if there is excess moisture to release latent heat
-            if(dq > 0.):
-                qlko_ktcon = dq
-                qcko = qrch
+                if(dq > 0.):
+                    qlko_ktcon = dq
+                    qcko = qrch
+
+    with computation(BACKWARD), interval(0, -1):
+        qlko_ktcon = qlko_ktcon[0, 0, 1]
 
 ## endif
 
