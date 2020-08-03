@@ -1,44 +1,95 @@
 import gt4py as gt
 from gt4py import gtscript
 from gt4py.gtscript import PARALLEL, FORWARD, BACKWARD, computation, interval
-from shalconv.funcphys import fpvs
+from shalconv.funcphys import fpvsx_gt as fpvs
 from . import *
+
+from shalconv.physcons import (
+    con_g     as g,
+    con_cp    as cp,
+    con_hvap  as hvap,
+    con_rv    as rv,
+    con_fvirt as fv,
+    con_t0c   as t0c,
+    con_rd    as rd,
+    con_cvap  as cvap,
+    con_cliq  as cliq,
+    con_eps   as eps,
+    con_epsm1 as epsm1
+)
+
+elocp      = hvap/cp
+el2orc     = hvap * hvap/(rv * cp)
+d0         = 0.001
+cm         = 1.0
+delta      = fv
+fact1      = (cvap - cliq)/rv
+fact2      = hvap/rv - fact1 * t0c
+clamd      = 0.1
+tkemx      = 0.65
+tkemn      = 0.05
+dtke       = tkemx - tkemn
+dthk       = 25.0
+cinpcrmx   = 180.0
+cinpcrmn   = 120.0
+cinacrmx   = -120.0
+cinacrmn   = -80.0
+crtlamd    = 3.0e-4
+dtmax      = 10800.0
+dtmin      = 600.0
+bet1       = 1.875
+cd1        = 0.506
+f1         = 2.0
+gam1       = 0.5
+betaw      = 0.03
+dxcrt      = 15.0e3
+h1         = 0.33333333
+tf         = 233.16
+tcr        = 263.16
+tcrf       = 1.0/(tcr - tf)
+
+aafac   = 0.05
+evfact  = 0.3
+evfactl = 0.3
+w1l     = -8.0e-3
+w2l     = -4.0e-2
+w3l     = -5.0e-3
+w4l     = -5.0e-4
+w1s     = -2.0e-4
+w2s     = -2.0e-3
+w3s     = -1.0e-3
+w4s     = -2.0e-5
 
 externals = {
     "fpvs":fpvs
 }
 
-@gtscript.stencil(backend=BACKEND,externals=externals, verbose=True)
+@gtscript.stencil(backend=BACKEND,externals=externals, rebuild=REBUILD)
 def stencil_static0(
-    cnvflg: FIELD_FLOAT,
+    cnvflg: FIELD_INT,
     hmax: FIELD_FLOAT,
     heo: FIELD_FLOAT,
-    kb: FIELD_FLOAT,
-    k: FIELD_FLOAT,
-    kpbl: FIELD_FLOAT,
-    kmax: FIELD_FLOAT,
-    dz: FIELD_FLOAT,
+    kb: FIELD_INT,
+    k_idx: FIELD_INT,
+    kpbl: FIELD_INT,
+    kmax: FIELD_INT,
+    #dz: FIELD_FLOAT,
     zo: FIELD_FLOAT,
-    dp: FIELD_FLOAT,
-    es: FIELD_FLOAT,
+    #dp: FIELD_FLOAT,
+    #es: FIELD_FLOAT,
     to: FIELD_FLOAT,
-    pprime: FIELD_FLOAT,
-    epsm1: FIELD_FLOAT,
-    eps: FIELD_FLOAT,
-    qs: FIELD_FLOAT,
-    dqsdp: FIELD_FLOAT,
-    desdt: FIELD_FLOAT,
-    dqsdt: FIELD_FLOAT,
-    fact1: FIELD_FLOAT,
-    fact2: FIELD_FLOAT,
-    gamma: FIELD_FLOAT,
-    el2orc: FIELD_FLOAT,
+    #pprime: FIELD_FLOAT,
+    #qs: FIELD_FLOAT,
+    #dqsdp: FIELD_FLOAT,
+    #desdt: FIELD_FLOAT,
+    #dqsdt: FIELD_FLOAT,
+    #fact1: DTYPE_FLOAT,
+    #fact2: DTYPE_FLOAT,
+    #gamma: FIELD_FLOAT,
+    #el2orc: DTYPE_FLOAT,
     qeso: FIELD_FLOAT,
-    g: FIELD_FLOAT,
-    hvap: FIELD_FLOAT,
-    cp: FIELD_FLOAT,
-    dt: FIELD_FLOAT,
-    dq: FIELD_FLOAT,
+    #dt: FIELD_FLOAT,
+    #dq: FIELD_FLOAT,
     qo: FIELD_FLOAT,
     po: FIELD_FLOAT,
     uo: FIELD_FLOAT,
@@ -48,7 +99,7 @@ def stencil_static0(
 ):
     """
     Scale-Aware Mass-Flux Shallow Convection
-    :to use the k[1,0:im,0:km] as storage of 1 to k index.
+    :to use the k_idx[1,0:im,0:km] as storage of 1 to k_idx index.
     """
     with computation(PARALLEL), interval(...):
         if cnvflg[0,0,0]:
@@ -57,9 +108,9 @@ def stencil_static0(
 
     with computation(FORWARD), interval(1,None):
         hmax = hmax[0,0,-1]
-        if (cnvflg[0,0,0] and k[0,0,0] <= kpbl[0,0,0]):
+        if (cnvflg[0,0,0] and k_idx[0,0,0] <= kpbl[0,0,0]):
                 if(heo[0,0,0] > hmax[0,0,0]):
-                    kb   = k[0,0,0]
+                    kb   = k_idx[0,0,0]
                     hmax = heo[0,0,0]
 # to make all slice like the final slice    
     with computation(BACKWARD), interval(0,-1):
@@ -68,7 +119,18 @@ def stencil_static0(
 
     with computation(FORWARD), interval(0,-1):
         tmp = fpvs(to[0,0,1])
-        if (cnvflg[0,0,0] and k[0,0,0] <= kmax[0,0,0]-1):
+        dz = 1.
+        dp = 1.
+        es = 1.
+        pprime = 1.
+        qs = 1.
+        dqsdp = 1.
+        desdt = 1.
+        dqsdt = 1.
+        gamma = 1.
+        dt = 1.
+        dq = 1.
+        if (cnvflg[0,0,0] and k_idx[0,0,0] <= kmax[0,0,0]-1):
             dz      = .5 * (zo[0,0,1] - zo[0,0,0])
             dp      = .5 * (pfld[0,0,1] - pfld[0,0,0])
             es      = 0.01 * tmp     # fpvs is in pa
@@ -86,7 +148,7 @@ def stencil_static0(
     
     with computation(FORWARD), interval(0,-1):
         tmp = fpvs(to)
-        if (cnvflg[0,0,0] and k[0,0,0] <= kmax[0,0,0]-1):
+        if (cnvflg[0,0,0] and k_idx[0,0,0] <= kmax[0,0,0]-1):
             qeso = 0.01 * tmp     # fpvs is in pa
             qeso = eps * qeso[0,0,0] / (po[0,0,0] + epsm1*qeso[0,0,0])
 #            val1      =    1.e-8         
@@ -103,30 +165,31 @@ def stencil_static0(
 
 
 
-## ntr stencil
+## ntr stencil put at last
 
-@gtscript.stencil(backend=BACKEND,externals=externals, rebuild=REBUILD, **BACKEND_OPTS)
-def stencil_ntrstatic0(
-    cnvflg: FIELD_FLOAT,
-    k: FIELD_FLOAT,
-    kmax: FIELD_FLOAT,
-    ctro: FIELD_FLOAT
-):
-    with computation(FORWARD), interval(0,-1):
-        if(cnvflg and k <= (kmax-1)):
-            ctro = .5 * (ctro + ctro[0,0,1])
+# @gtscript.stencil(backend=BACKEND,externals=externals, rebuild=REBUILD, **BACKEND_OPTS)
+# def stencil_ntrstatic0(
+#     cnvflg: FIELD_INT,
+#     k_idx: FIELD_INT,
+#     kmax: FIELD_INT,
+#     ctro: FIELD_FLOAT
+# ):
+#     with computation(FORWARD), interval(0,-1):
+#         if(cnvflg and k_idx <= (kmax-1)):
+#             ctro = .5 * (ctro + ctro[0,0,1])
 
 
-@gtscript.stencil(backend=BACKEND,externals=externals, rebuild=REBUILD, **BACKEND_OPTS)
+@gtscript.stencil(backend=BACKEND, rebuild=REBUILD)
 def stencil_static1(
-    cnvflg: FIELD_FLOAT,
-    flg: FIELD_FLOAT,
-    kbcon: FIELD_FLOAT,
-    kmax: FIELD_FLOAT,
-    k: FIELD_FLOAT,
-    kbm: FIELD_FLOAT,
-    kb: FIELD_FLOAT,
-    heo_kb: FIELD_FLOAT,
+    cnvflg: FIELD_INT,
+    flg: FIELD_INT,
+    kbcon: FIELD_INT,
+    kmax: FIELD_INT,
+    k_idx: FIELD_INT,
+    kbm: FIELD_INT,
+    kb: FIELD_INT,
+    heo: FIELD_FLOAT,
+    #heo_kb: FIELD_FLOAT,
     heso: FIELD_FLOAT
 ):
     with computation(PARALLEL), interval(...):
@@ -135,9 +198,10 @@ def stencil_static1(
             kbcon = kmax
     
     with computation(FORWARD), interval(...):
-        if(k != 1):
+        heo_kb = heo
+        if(k_idx != 1):
             heo_kb = heo_kb[0,0,-1]
-        if(k == kb):
+        if(k_idx == kb):
             heo_kb = heo
     
     with computation(BACKWARD), interval(0,-1):
@@ -146,11 +210,11 @@ def stencil_static1(
     with computation(FORWARD), interval(1,-1):
         kbcon = kbcon[0,0,-1]
         flg = flg[0,0,-1]
-        if (flg and k < kbm):
+        if (flg and k_idx < kbm):
 #to use heo_kb to represent heo(i,kb(i))
-            if(k[0,0,0] > kb[0,0,0] and heo_kb > heso[0,0,0]):
-                kbcon = k
-                flg   = False
+            if(k_idx[0,0,0] > kb[0,0,0] and heo_kb > heso[0,0,0]):
+                kbcon = k_idx
+                flg   = 0
 
 ## to make all slice like the final slice
     with computation(FORWARD), interval(-1,None):
@@ -163,51 +227,67 @@ def stencil_static1(
     with computation(PARALLEL), interval(...):
         if(cnvflg):
             if(kbcon == kmax):
-                cnvflg = False
+                cnvflg = 0
     
 ## judge LFC and return 553-558
 
-@gtscript.stencil(backend=BACKEND,externals=externals, rebuild=REBUILD, **BACKEND_OPTS)
+@gtscript.stencil(backend=BACKEND, rebuild=REBUILD)
 def stencil_static2(
-    cnvflg: FIELD_FLOAT,
+    cnvflg: FIELD_INT,
     pdot: FIELD_FLOAT,
-    dotkbcon: FIELD_FLOAT,
-    islimsk: FIELD_FLOAT,
-    w1: FIELD_FLOAT,
-    w2: FIELD_FLOAT,
-    w3: FIELD_FLOAT,
-    w4: FIELD_FLOAT,
-    w1l: FIELD_FLOAT,
-    w2l: FIELD_FLOAT,
-    w3l: FIELD_FLOAT,
-    w4l: FIELD_FLOAT,
-    w1s: FIELD_FLOAT,
-    w2s: FIELD_FLOAT,
-    w3s: FIELD_FLOAT,
-    w4s: FIELD_FLOAT,
-    tem: FIELD_FLOAT,
-    ptem: FIELD_FLOAT,
-    ptem1: FIELD_FLOAT,
-    cinpcr: FIELD_FLOAT,
-    cinpcrmx: FIELD_FLOAT,
-    cinpcrmn: FIELD_FLOAT,
-    tem1: FIELD_FLOAT,
-    pfld_kb: FIELD_FLOAT,
-    pfld_kbcon: FIELD_FLOAT
+    dot: FIELD_FLOAT,
+    islimsk: FIELD_INT,
+    k_idx: FIELD_INT,
+    kbcon: FIELD_INT,
+    kb: FIELD_INT,
+    # w1: FIELD_FLOAT,
+    # w2: FIELD_FLOAT,
+    # w3: FIELD_FLOAT,
+    # w4: FIELD_FLOAT,
+    # w1l: DTYPE_FLOAT,
+    # w2l: DTYPE_FLOAT,
+    # w3l: DTYPE_FLOAT,
+    # w4l: DTYPE_FLOAT,
+    # w1s: DTYPE_FLOAT,
+    # w2s: DTYPE_FLOAT,
+    # w3s: DTYPE_FLOAT,
+    # w4s: DTYPE_FLOAT,
+    #tem: FIELD_FLOAT,
+    #ptem: FIELD_FLOAT,
+    #ptem1: FIELD_FLOAT,
+    #cinpcr: FIELD_FLOAT,
+    # cinpcrmx: DTYPE_FLOAT,
+    # cinpcrmn: DTYPE_FLOAT,
+    pfld: FIELD_FLOAT
+    #tem1: FIELD_FLOAT,
+    #pfld_kb: FIELD_FLOAT,
+    #pfld_kbcon: FIELD_FLOAT
 ):
+    with computation(FORWARD), interval(...):
+        dot_kbcon = dot
+        if(k_idx != 1):
+            dot_kbcon = dot_kbcon[0,0,-1]
+        if(k_idx == kbcon):
+            dot_kbcon = dot
+
+    with computation(BACKWARD), interval(0,-1):
+        dot_kbcon = dot_kbcon[0,0,1]
+
     with computation(PARALLEL), interval(...):
         if(cnvflg):
 #to use dotkbcon to represent dot(i,kbcon(i))
 #            pdot(i)  = 10.* dotkbcon
-            pdot[0,0,0]  = 0.01 * dotkbcon # Now dot is in Pa/s
+            pdot[0,0,0]  = 0.01 * dot_kbcon # Now dot is in Pa/s
 
     with computation(FORWARD), interval(...):
-        if(k != 1):
+        pfld_kb = pfld
+        pfld_kbcon = pfld
+        if(k_idx != 1):
             pfld_kb = pfld_kb[0,0,-1]
             pfld_kbcon = pfld_kbcon[0,0,-1]
-        if(k == kb):
+        if(k_idx == kb):
             pfld_kb = pfld
-        if(k == kbcon):
+        if(k_idx == kbcon):
             pfld_kbcon = pfld
     
     with computation(BACKWARD), interval(0,-1):
@@ -215,17 +295,21 @@ def stencil_static2(
         pfld_kbcon = pfld_kbcon[0,0,1]
 
     with computation(PARALLEL), interval(...):
+        w1 = w1s
+        w2 = w2s
+        w3 = w3s
+        w4 = w4s
+        tem = 0.
+        tem1 = 0.
+        ptem = 0.
+        ptem1 = 0.
+        cinpcr = 0.
         if(cnvflg):
             if(islimsk == 1):
-                w1 = w1l # require constant to be also 3d shape
+                w1 = w1l
                 w2 = w2l
                 w3 = w3l
                 w4 = w4l
-            else:
-                w1 = w1s
-                w2 = w2s
-                w3 = w3s
-                w4 = w4s
             if(pdot <= w4):
                 tem = (pdot - w4) / (w3 - w4)
             elif(pdot >= -w4):
@@ -240,60 +324,59 @@ def stencil_static2(
 #to use pfld_kb and pfld_kbcon to represent pfld(i,kb(i))
             tem1 = pfld_kb - pfld_kbcon
             if(tem1 > cinpcr):
-                cnvflg = False
+                cnvflg = 0
 
 ## do totflg judgement and return
 ## if ntk >0 : also need to define ntk dimension to 1
-@gtscript.stencil(backend=BACKEND,externals=externals, rebuild=REBUILD, **BACKEND_OPTS)
+@gtscript.stencil(backend=BACKEND, rebuild=REBUILD)
 def stencil_static3(
     sumx: FIELD_FLOAT,
     tkemean: FIELD_FLOAT,
-    cnvflg: FIELD_FLOAT,
-    k: FIELD_FLOAT,
-    kb: FIELD_FLOAT,
-    kbcon: FIELD_FLOAT,
-    dz: FIELD_FLOAT,
+    cnvflg: FIELD_INT,
+    k_idx: FIELD_INT,
+    kb: FIELD_INT,
+    kbcon: FIELD_INT,
+    #dz: FIELD_FLOAT,
     zo: FIELD_FLOAT,
-    tem: FIELD_FLOAT,
+    #tem: FIELD_FLOAT,
     qtr: FIELD_FLOAT,
-    tkemn: FIELD_FLOAT,
-    tkemx: FIELD_FLOAT,
+    # tkemn: DTYPE_FLOAT,
+    # tkemx: DTYPE_FLOAT,
     clamt: FIELD_FLOAT,
-    clam: FIELD_FLOAT,
-    clamd: FIELD_FLOAT,
-    tem1: FIELD_FLOAT,
-    dtke: FIELD_FLOAT
+    clam: DTYPE_FLOAT
+    # clamd: DTYPE_FLOAT,
+    #tem1: FIELD_FLOAT,
+    # dtke: DTYPE_FLOAT
 ):
     with computation(PARALLEL), interval(...):
         sumx = 0.
         tkemean = 0.
     
     with computation(FORWARD), interval(0,-1):
+        dz = 0.
+        tem = 0.
         if(cnvflg):
-            if(k >= kb and k < kbcon):
+            if(k_idx >= kb and k_idx < kbcon):
                 dz = zo[0,0,1] - zo[0,0,0]
                 tem = 0.5 * (qtr[0,0,0]+qtr[0,0,1])
                 tkemean = tkemean + tem * dz #dz, tem to be 3d
                 sumx = sumx + dz
 
     with computation(PARALLEL), interval(...):
-        if(cnvflg):
+        if cnvflg:
             tkemean = tkemean / sumx
-            if(tkemean > tkemx): #tkemx, clam, clamd, tkemnm, dtke to be 3d
-               clamt = clam + clamd 
-            elif(tkemean < tkemn):
-               clamt = clam - clamd
-            else:
-               tem = tkemx - tkemean
-               tem1 = 1. - 2. *  tem / dtke
-               clamt = clam + clamd * tem1
+            if tkemean > tkemx:  # tkemx, clam, clamd, tkemnm, dtke to be 3d
+                clamt = clam + clamd
+            elif tkemean < tkemn:
+                clamt = clam - clamd
+            clamt = (clam + clamd + 1.0 - 2.0 * (tkemx - tkemean) / dtke) if (not tkemean) > tkemx and (not tkemean < tkemn) else clamt
 
 ## else :
-@gtscript.stencil(backend=BACKEND,externals=externals, rebuild=REBUILD, **BACKEND_OPTS)
+@gtscript.stencil(backend=BACKEND, rebuild=REBUILD)
 def stencil_static4(
-    cnvflg: FIELD_FLOAT,
+    cnvflg: FIELD_INT,
     clamt: FIELD_FLOAT,
-    clam: FIELD_FLOAT,
+    clam: DTYPE_FLOAT,
 ):
     with computation(PARALLEL), interval(...):
         if(cnvflg):
@@ -301,22 +384,22 @@ def stencil_static4(
 ##
 ## start updraft entrainment rate.
 ## pass
-@gtscript.stencil(backend=BACKEND,externals=externals, rebuild=REBUILD, **BACKEND_OPTS)
+@gtscript.stencil(backend=BACKEND, rebuild=REBUILD)
 def stencil_static5(
-    cnvflg: FIELD_FLOAT,
+    cnvflg: FIELD_INT,
     xlamue: FIELD_FLOAT,
     clamt: FIELD_FLOAT,
     zi: FIELD_FLOAT,
     xlamud: FIELD_FLOAT,
-    k: FIELD_FLOAT,
-    kbcon: FIELD_FLOAT,
-    kb: FIELD_FLOAT,
-    dz: FIELD_FLOAT,
-    ptem: FIELD_FLOAT,
+    k_idx: FIELD_INT,
+    kbcon: FIELD_INT,
+    kb: FIELD_INT,
+    #dz: FIELD_FLOAT,
+    #ptem: FIELD_FLOAT,
     eta: FIELD_FLOAT,
-    ktconn: FIELD_FLOAT,
-    kmax: FIELD_FLOAT,
-    kbm: FIELD_FLOAT,
+    ktconn: FIELD_INT,
+    kmax: FIELD_INT,
+    kbm: FIELD_INT,
     hcko: FIELD_FLOAT,
     ucko: FIELD_FLOAT,
     vcko: FIELD_FLOAT,
@@ -339,11 +422,13 @@ def stencil_static5(
             xlamud = 0.001 * clamt
 
     with computation(BACKWARD), interval(0,-1):
+        dz = 0.
+        ptem = 0.
         if (cnvflg):
-            if( k < kbcon and k >= kb):
+            if( k_idx < kbcon and k_idx >= kb):
                 dz    = zi[0,0,1] - zi[0,0,0]
                 ptem  = 0.5*(xlamue[0,0,0]+xlamue[0,0,1])-xlamud[0,0,0]
-                eta   = eta[0,0,1] / (1. + ptem[0,0,0] * dz[0,0,0])
+                eta   = eta[0,0,1] / (1. + ptem * dz)
     
     with computation(PARALLEL), interval(...):
         flg = cnvflg
@@ -354,15 +439,15 @@ def stencil_static5(
         ktconn = ktconn[0,0,-1]
         kbm = kbm[0,0,-1]
         if(flg):
-            if(k > kbcon and k < kmax):
+            if(k_idx > kbcon and k_idx < kmax):
                 dz       = zi[0,0,0] - zi[0,0,-1]
                 ptem     = 0.5*(xlamue[0,0,0]+xlamue[0,0,-1])-xlamud[0,0,0]
                 eta = eta[0,0,-1] * (1 + ptem * dz)
                 if(eta <= 0.):
-                    kmax = k
-                    ktconn = k
+                    kmax = k_idx
+                    ktconn = k_idx
                     kbm = kbm if (kbm<kmax) else kmax
-                    flg = False
+                    flg = 0
  ## to make all slice same as final slice
     with computation(FORWARD), interval(-1,None):
         flg = flg[0,0,-1]
@@ -378,38 +463,39 @@ def stencil_static5(
     with computation(PARALLEL), interval(...):
         if(cnvflg):
           #indx         = kb
-          if(k==kb):
+          if(k_idx==kb):
             hcko = heo
             ucko = uo
             vcko = vo
 
-## for tracers do n = 1, ntr: use ecko, ctro [n] => [1,i,k]
-@gtscript.stencil(backend=BACKEND,externals=externals, rebuild=REBUILD, **BACKEND_OPTS)
+## for tracers do n = 1, ntr: use ecko, ctro [n] => [1,i,k_idx]
+## pass
+@gtscript.stencil(backend=BACKEND, rebuild=REBUILD)
 def stencil_ntrstatic1(
-    cnvflg: FIELD_FLOAT,
-    k: FIELD_FLOAT,
-    kb: FIELD_FLOAT,
+    cnvflg: FIELD_INT,
+    k_idx: FIELD_INT,
+    kb: FIELD_INT,
     ecko: FIELD_FLOAT,
     ctro: FIELD_FLOAT
 ):
     with computation(PARALLEL), interval(...):
-        if(cnvflg and k == kb):
+        if(cnvflg and k_idx == kb):
             ecko = ctro
 
 
-## not pass
+## same as ntrstatic can neglect
 # @gtscript.stencil(backend=BACKEND,externals=externals, rebuild=REBUILD, **BACKEND_OPTS)
 # def stencil_static6(
-#     cnvflg: FIELD_FLOAT,
-#     k: FIELD_FLOAT,
-#     kb: FIELD_FLOAT,
+#     cnvflg: FIELD_INT,
+#     k_idx: FIELD_INT,
+#     kb: FIELD_INT,
 #     ecko: FIELD_FLOAT,
 #     ctro: FIELD_FLOAT
 # ):
 #     with computation(PARALLEL), interval(...):
 #         if(cnvflg):
 #             #indx = kb(i)
-#             if(k==kb):
+#             if(k_idx==kb):
 #                 ecko = ctro
 
 ## end do
@@ -417,37 +503,43 @@ def stencil_ntrstatic1(
 ## Line 769
 ## Calculate the cloud properties as a parcel ascends, modified by entrainment and detrainment. Discretization follows Appendix B of Grell (1993) \cite grell_1993 . Following Han and Pan (2006) \cite han_and_pan_2006, the convective momentum transport is reduced by the convection-induced pressure gradient force by the constant "pgcon", currently set to 0.55 after Zhang and Wu (2003) \cite zhang_and_wu_2003 .
 ## pass
-@gtscript.stencil(backend=BACKEND,externals=externals, rebuild=REBUILD, **BACKEND_OPTS)
+@gtscript.stencil(backend=BACKEND, rebuild=REBUILD)
 def stencil_static7(
-    cnvflg: FIELD_FLOAT,
-    k: FIELD_FLOAT,
-    kb: FIELD_FLOAT,
-    kmax: FIELD_FLOAT,
-    dz: FIELD_FLOAT,
+    cnvflg: FIELD_INT,
+    k_idx: FIELD_INT,
+    kb: FIELD_INT,
+    kmax: FIELD_INT,
+    #dz: FIELD_FLOAT,
     zi: FIELD_FLOAT,
-    tem: FIELD_FLOAT,
+    #tem: FIELD_FLOAT,
     xlamue: FIELD_FLOAT,
-    tem1: FIELD_FLOAT,
+    #tem1: FIELD_FLOAT,
     xlamud: FIELD_FLOAT,
-    factor: FIELD_FLOAT,
+    #factor: FIELD_FLOAT,
     hcko: FIELD_FLOAT,
     heo: FIELD_FLOAT,
     dbyo: FIELD_FLOAT,
     heso: FIELD_FLOAT,
-    cm: FIELD_FLOAT,
-    ptem: FIELD_FLOAT,
-    pgcon: FIELD_FLOAT,
-    ptem1: FIELD_FLOAT,
+    #cm: DTYPE_FLOAT,
+    #ptem: FIELD_FLOAT,
+    pgcon: DTYPE_FLOAT,
+    #ptem1: FIELD_FLOAT,
     ucko: FIELD_FLOAT,
     uo: FIELD_FLOAT,
     vcko: FIELD_FLOAT,
     vo: FIELD_FLOAT
 ):
     with computation(FORWARD), interval(1,-1):
+        dz = 0.
+        tem = 0.
+        tem1 = 0.
+        ptem = 0.
+        ptem1 = 0.
+        factor = 0.
         if(cnvflg):
-            if(k > kb and k < kmax):
+            if(k_idx > kb and k_idx < kmax):
                 dz   = zi[0,0,0] - zi[0,0,-1]
-                tem  = 0.5 * (xlamue[0,0,0]+xlamue[0,0,-1]) * dz[0,0,0]
+                tem  = 0.5 * (xlamue[0,0,0]+xlamue[0,0,-1]) * dz
                 tem1 = 0.5 * xlamud * dz
                 factor = 1. + tem - tem1
                 hcko = ((1.-tem1)*hcko[0,0,-1]+tem*0.5*
@@ -465,12 +557,12 @@ def stencil_static7(
 
 ## for n = 1, ntr:
 ## pass
-@gtscript.stencil(backend=BACKEND,externals=externals, rebuild=REBUILD, **BACKEND_OPTS)
+@gtscript.stencil(backend=BACKEND, rebuild=REBUILD)
 def stencil_ntrstatic2(
-    cnvflg: FIELD_FLOAT,
-    k: FIELD_FLOAT,
-    kb: FIELD_FLOAT,
-    kmax: FIELD_FLOAT,
+    cnvflg: FIELD_INT,
+    k_idx: FIELD_INT,
+    kb: FIELD_INT,
+    kmax: FIELD_INT,
     zi: FIELD_FLOAT,
     dz: FIELD_FLOAT,
     tem: FIELD_FLOAT,
@@ -481,28 +573,29 @@ def stencil_ntrstatic2(
 ):
     with computation(FORWARD), interval(1,-1):
         if (cnvflg):
-            if(k > kb and k < kmax):
+            if(k_idx > kb and k_idx < kmax):
                 dz   = zi - zi[0,0,-1]
                 tem  = 0.25 * (xlamue+xlamue[0,0,-1]) * dz
                 factor = 1. + tem
                 ecko = ((1.-tem)*ecko[0,0,-1]+tem* \
                                 (ctro+ctro[0,0,-1]))/factor
 ## enddo 
-## not pass
-@gtscript.stencil(backend=BACKEND,externals=externals, rebuild=REBUILD, **BACKEND_OPTS)
+## pass
+@gtscript.stencil(backend=BACKEND, rebuild=REBUILD)
 def stencil_static9(
-    cnvflg: FIELD_FLOAT,
-    flg: FIELD_FLOAT,
-    kbcon1: FIELD_FLOAT,
-    kmax: FIELD_FLOAT,
-    k: FIELD_FLOAT,
-    kbm: FIELD_FLOAT,
-    kbcon: FIELD_FLOAT,
+    cnvflg: FIELD_INT,
+    flg: FIELD_INT,
+    kbcon1: FIELD_INT,
+    kmax: FIELD_INT,
+    k_idx: FIELD_INT,
+    kbm: FIELD_INT,
+    kbcon: FIELD_INT,
     dbyo: FIELD_FLOAT,
-    tem: FIELD_FLOAT,
-    dthk: FIELD_FLOAT,
-    pfld_kbcon: FIELD_FLOAT,
-    pfld_kbcon1: FIELD_FLOAT,
+    # tem: FIELD_FLOAT,
+    #dthk: DTYPE_FLOAT,
+    pfld: FIELD_FLOAT,
+    # pfld_kbcon: FIELD_FLOAT,
+    # pfld_kbcon1: FIELD_FLOAT,
 ):
     with computation(PARALLEL), interval(...):
         flg = cnvflg
@@ -510,10 +603,10 @@ def stencil_static9(
 
     with computation(FORWARD), interval(1,-1):
         flg = flg[0,0,-1]
-        if (flg and k < kbm):
-            if(k >= kbcon and dbyo > 0.):
-                kbcon1 = k
-                flg    = False
+        if (flg and k_idx < kbm):
+            if(k_idx >= kbcon and dbyo > 0.):
+                kbcon1 = k_idx
+                flg    = 0
 
 ## to make all slice like the final slice
     with computation(FORWARD), interval(-1,None):
@@ -527,15 +620,17 @@ def stencil_static9(
     with computation(PARALLEL),interval(...):
         if(cnvflg):
             if(kbcon1 == kmax):
-                cnvflg = False
+                cnvflg = 0
 
     with computation(FORWARD), interval(...):
-        if(k != 1):
+        pfld_kbcon = pfld
+        pfld_kbcon1 = pfld
+        if(k_idx != 1):
             pfld_kbcon = pfld_kbcon[0,0,-1]
             pfld_kbcon1 = pfld_kbcon1[0,0,-1]
-        if(k == kbcon):
+        if(k_idx == kbcon):
             pfld_kbcon = pfld
-        if(k == kbcon1):
+        if(k_idx == kbcon1):
             pfld_kbcon1 = pfld
     
     with computation(BACKWARD), interval(0,-1):
@@ -543,62 +638,62 @@ def stencil_static9(
         pfld_kbcon1 = pfld_kbcon1[0,0,1]
 
     with computation(PARALLEL),interval(...):
+        tem = 0.
         if(cnvflg):
 # use pfld_kbcon and pfld_kbcon1 to represent
 #           tem = pfld(i,kbcon(i)) - pfld(i,kbcon1(i))
             tem = pfld_kbcon - pfld_kbcon1
             if(tem > dthk):
-                    cnvflg = False
+                    cnvflg = 0
 
 ## judge totflg return
 
 ## calculate convective inhibition
-## not pass
-@gtscript.stencil(backend=BACKEND,externals=externals, rebuild=REBUILD, **BACKEND_OPTS)
+## pass
+@gtscript.stencil(backend=BACKEND, rebuild=REBUILD)
 def stencil_static10(
     cina: FIELD_FLOAT,
-    cnvflg: FIELD_FLOAT,
-    k: FIELD_FLOAT,
-    kb: FIELD_FLOAT,
-    kbcon1: FIELD_FLOAT,
-    dz1: FIELD_FLOAT,
+    cnvflg: FIELD_INT,
+    k_idx: FIELD_INT,
+    kb: FIELD_INT,
+    kbcon1: FIELD_INT,
+    #dz1: FIELD_FLOAT,
     zo: FIELD_FLOAT,
-    gamma: FIELD_FLOAT,
-    g: FIELD_FLOAT,
-    el2orc: FIELD_FLOAT,
+    #gamma: FIELD_FLOAT,
+    #el2orc: DTYPE_FLOAT,
     qeso: FIELD_FLOAT,
     to: FIELD_FLOAT,
-    rfact: FIELD_FLOAT,
-    delta: FIELD_FLOAT,
-    cp: FIELD_FLOAT,
-    hvap: FIELD_FLOAT,
+    #rfact: FIELD_FLOAT,
+    #delta: DTYPE_FLOAT,
     dbyo: FIELD_FLOAT,
     qo: FIELD_FLOAT,
-    w1: FIELD_FLOAT,
-    w2: FIELD_FLOAT,
-    w3: FIELD_FLOAT,
-    w4: FIELD_FLOAT,
-    w1l: FIELD_FLOAT,
-    w2l: FIELD_FLOAT,
-    w3l: FIELD_FLOAT,
-    w4l: FIELD_FLOAT,
-    w1s: FIELD_FLOAT,
-    w2s: FIELD_FLOAT,
-    w3s: FIELD_FLOAT,
-    w4s: FIELD_FLOAT,
+    # w1: FIELD_FLOAT,
+    # w2: FIELD_FLOAT,
+    # w3: FIELD_FLOAT,
+    # w4: FIELD_FLOAT,
+    # w1l: DTYPE_FLOAT,
+    # w2l: DTYPE_FLOAT,
+    # w3l: DTYPE_FLOAT,
+    # w4l: DTYPE_FLOAT,
+    # w1s: DTYPE_FLOAT,
+    # w2s: DTYPE_FLOAT,
+    # w3s: DTYPE_FLOAT,
+    # w4s: DTYPE_FLOAT,
     pdot: FIELD_FLOAT,
-    tem: FIELD_FLOAT,
-    tem1: FIELD_FLOAT,
-    cinacrmx: FIELD_FLOAT,
-    cinacrmn: FIELD_FLOAT,
-    cinacr: FIELD_FLOAT,
-    *,
-    islimsk: dtype
+    #tem: FIELD_FLOAT,
+    #tem1: FIELD_FLOAT,
+    # cinacrmx: DTYPE_FLOAT,
+    # cinacrmn: DTYPE_FLOAT,
+    #cinacr: FIELD_FLOAT,
+    islimsk: FIELD_INT
 ):
     with computation(FORWARD), interval(1,-1):
+        dz1 = 0.
+        gamma = 0.
+        rfact = 0.
         cina = cina[0,0,-1]
         if (cnvflg):
-            if(k > kb and k < kbcon1):
+            if(k_idx > kb and k_idx < kbcon1):
                 dz1 = zo[0,0,1] - zo
                 gamma = el2orc * qeso / (to**2)
                 rfact =  1. + delta * cp * gamma * to / hvap
@@ -606,7 +701,7 @@ def stencil_static10(
                        dbyo / (1. + gamma) * rfact
 #               val = 0.
                 cina = (cina +
-#    &                 dz1 * eta(i,k) * g * delta *
+#    &                 dz1 * eta(i,k_idx) * g * delta *
                         dz1 * g * delta * \
                         (qeso - qo)) if ((qeso - qo)>0.) else cina
 
@@ -617,6 +712,13 @@ def stencil_static10(
         cina = cina[0,0,1]
 
     with computation(PARALLEL), interval(...):
+        w1 = w1s
+        w2 = w2s
+        w3 = w3s
+        w4 = w4s
+        tem = 0.
+        tem1 = 0.
+        cinacr = 0.
         if(cnvflg):
 #
             if(islimsk == 1):
@@ -624,12 +726,7 @@ def stencil_static10(
                 w2 = w2l
                 w3 = w3l
                 w4 = w4l
-            else:
-                w1 = w1s
-                w2 = w2s
-                w3 = w3s
-                w4 = w4s
-            
+
             if(pdot <= w4):
                 tem = (pdot - w4) / (w3 - w4)
             elif(pdot >= -w4):
@@ -647,65 +744,61 @@ def stencil_static10(
     #
     #         cinacr = cinacrmx
             if(cina < cinacr):
-                cnvflg = False
+                cnvflg = 0
 
 ## totflag and return
 
 ##  determine first guess cloud top as the level of zero buoyancy
 ##    limited to the level of P/Ps=0.7
-## not pass
-@gtscript.stencil(backend=BACKEND,externals=externals, rebuild=REBUILD, **BACKEND_OPTS)
+## pass
+@gtscript.stencil(backend=BACKEND,rebuild=REBUILD)
 def stencil_static11(
-    flg: FIELD_FLOAT,
-    cnvflg: FIELD_FLOAT,
-    ktcon: FIELD_FLOAT,
-    kbm: FIELD_FLOAT,
-    kbcon1: FIELD_FLOAT,
+    flg: FIELD_INT,
+    cnvflg: FIELD_INT,
+    ktcon: FIELD_INT,
+    kbm: FIELD_INT,
+    kbcon1: FIELD_INT,
     dbyo: FIELD_FLOAT,
-    kbcon: FIELD_FLOAT,
-    dp: FIELD_FLOAT,
+    kbcon: FIELD_INT,
+    #dp: FIELD_FLOAT,
     del0: FIELD_FLOAT,
     xmbmax: FIELD_FLOAT,
-    g: FIELD_FLOAT,
-    dt2: FIELD_FLOAT,
+    dt2: DTYPE_FLOAT,
     aa1: FIELD_FLOAT,
-    kb: FIELD_FLOAT,
+    kb: FIELD_INT,
     qcko: FIELD_FLOAT,
     qo: FIELD_FLOAT,
     qrcko: FIELD_FLOAT,
-    dz: FIELD_FLOAT,
+    #dz: FIELD_FLOAT,
     zi: FIELD_FLOAT,
-    gamma: FIELD_FLOAT,
-    el2orc: FIELD_FLOAT,
+    #gamma: FIELD_FLOAT,
+    #el2orc: DTYPE_FLOAT,
     qeso: FIELD_FLOAT,
     to: FIELD_FLOAT,
-    hvap: FIELD_FLOAT,
-    tem: FIELD_FLOAT,
-    tem1: FIELD_FLOAT,
+    #tem: FIELD_FLOAT,
+    #tem1: FIELD_FLOAT,
     xlamue: FIELD_FLOAT,
     xlamud: FIELD_FLOAT,
-    factor: FIELD_FLOAT,
+    #factor: FIELD_FLOAT,
     eta: FIELD_FLOAT,
-    dq: FIELD_FLOAT,
-    qrch: FIELD_FLOAT,
-    etah: FIELD_FLOAT,
-    ptem: FIELD_FLOAT,
+    #dq: FIELD_FLOAT,
+    #qrch: FIELD_FLOAT,
+    #etah: FIELD_FLOAT,
+    #ptem: FIELD_FLOAT,
     c0t: FIELD_FLOAT,
-    c1: FIELD_FLOAT,
-    qlk: FIELD_FLOAT,
+    c1: DTYPE_FLOAT,
+    #qlk: FIELD_FLOAT,
     dellal: FIELD_FLOAT,
     buo: FIELD_FLOAT,
-    rfact: FIELD_FLOAT,
+    #rfact: FIELD_FLOAT,
     drag: FIELD_FLOAT,
     zo: FIELD_FLOAT,
-    delta: FIELD_FLOAT,
-    cp: FIELD_FLOAT,
-    k: FIELD_FLOAT,
-    dz1: FIELD_FLOAT,
+    #delta: DTYPE_FLOAT,
+    k_idx: FIELD_INT,
+    #dz1: FIELD_FLOAT,
     pwo: FIELD_FLOAT,
     cnvwt: FIELD_FLOAT,
-    *,
-    ncloud: dtype
+    ncloud: DTYPE_INT
 ):
     with computation(PARALLEL), interval(...):
         flg = cnvflg
@@ -715,10 +808,10 @@ def stencil_static11(
     with computation(FORWARD), interval(1,-1):
         flg = flg[0,0,-1]
         ktcon = ktcon[0,0,-1]
-        if (flg and k < kbm):
-            if(k > kbcon1 and dbyo < 0.):
-                ktcon = k
-                flg   = False
+        if (flg and k_idx < kbm):
+            if(k_idx > kbcon1 and dbyo < 0.):
+                ktcon = k_idx
+                flg   = 0
 
 ## to make all slices ilke final slice
     with computation(FORWARD), interval(-1,None):
@@ -731,32 +824,43 @@ def stencil_static11(
 
 ##  specify upper limit of mass flux at cloud base
 
-    with computation(PARALLEL), interval(...):
+    with computation(FORWARD), interval(...):
+        dp = 0.
+        if(k_idx != 1):
+            xmbmax = xmbmax[0,0,-1]
         if(cnvflg):
-#         xmbmax(i) = .1
-#
-            k = kbcon
-            # change del name to del0
-            dp = 1000. * del0[0,0,0]
-            xmbmax = dp / (2. * g * dt2)
-#
-#         xmbmax(i) = dp / (g * dt2)
-#
-#         tem = dp / (g * dt2)
-#         xmbmax(i) = min(tem, xmbmax(i))
+            if(k_idx == kbcon):
+                dp = 1000. * del0
+                xmbmax = dp / (2. * g * dt2)
+
+    with computation(BACKWARD), interval(0,-1):
+        xmbmax = xmbmax[0,0,1]
+
 
 ##  compute cloud moisture property and precipitation
     with computation(PARALLEL), interval(...):
         if (cnvflg):
             aa1 = 0.
-            if (k == kb):
+            if (k_idx == kb):
                 qcko = qo
                 qrcko = qo
 
 ##  Calculate the moisture content of the entraining/detraining parcel (qcko) and the value it would have if just saturated (qrch), according to equation A.14 in Grell (1993) \cite grell_1993 . Their difference is the amount of convective cloud water (qlk = rain + condensate). Determine the portion of convective cloud water that remains suspended and the portion that is converted into convective precipitation (pwo). Calculate and save the negative cloud work function (aa1) due to water loading. Above the level of minimum moist static energy, some of the cloud water is detrained into the grid-scale cloud water from every cloud layer with a rate of 0.0005 \f$m^{-1}\f$ (dellal).
     with computation(FORWARD), interval(1,-1):
+        dz = 0.
+        gamma = 0.
+        qrch = 0.
+        tem = 0.
+        tem1 = 0.
+        factor = 0.
+        dq = 0.
+        etah = 0.
+        dp = 0.
+        ptem = 0.
+        qlk = 0.
+        rfact = 0.
         if (cnvflg):
-            if(k > kb and k < ktcon):
+            if(k_idx > kb and k_idx < ktcon):
                 dz    = zi - zi[0,0,-1]
                 gamma = el2orc * qeso / (to**2)
                 qrch = qeso \
@@ -771,10 +875,10 @@ def stencil_static11(
     #j
                 dq = eta * (qcko - qrch)
 #
-#             rhbar(i) = rhbar(i) + qo(i,k) / qeso(i,k)
+#             rhbar(i) = rhbar(i) + qo(i,k_idx) / qeso(i,k_idx)
 ##  below lfc check if there is excess moisture to release latent heat
 #
-                if(k >= kbcon and dq > 0.):
+                if(k_idx >= kbcon and dq > 0.):
                     etah = .5 * (eta + eta[0,0,-1])
                     dp = 1000. * del0
                     if(ncloud > 0):
@@ -789,7 +893,7 @@ def stencil_static11(
                     pwo = etah * c0t * dz * qlk
                     cnvwt = etah * qlk * g / dp
 
-                if(k >= kbcon):
+                if(k_idx >= kbcon):
                     rfact =  1. + delta * cp * gamma \
                           * to / hvap
                     buo = buo + (g / (cp * to)) \
@@ -805,8 +909,9 @@ def stencil_static11(
     
     with computation(FORWARD), interval(1,-1):
         aa1=aa1[0,0,-1]
+        dz1 = 0.
         if (cnvflg):
-            if(k >= kbcon and k < ktcon):
+            if(k_idx >= kbcon and k_idx < ktcon):
                 dz1 = zo[0,0,1] - zo
                 aa1 = aa1 + buo * dz1
     
@@ -818,7 +923,7 @@ def stencil_static11(
 
     with computation(PARALLEL), interval(...):
         if(cnvflg and aa1 <= 0.):
-            cnvflg = False
+            cnvflg = 0
 
 ## totflg and return
 
@@ -828,62 +933,58 @@ def stencil_static11(
 ##   limited to the level of P/Ps=0.7
 
 ## Continue calculating the cloud work function past the point of neutral buoyancy to represent overshooting according to Han and Pan (2011) \cite han_and_pan_2011 . Convective overshooting stops when \f$ cA_u < 0\f$ where \f$c\f$ is currently 10%, or when 10% of the updraft cloud work function has been consumed by the stable buoyancy force. Overshooting is also limited to the level where \f$p=0.7p_{sfc}\f$.
-## not pass
-@gtscript.stencil(backend=BACKEND,externals=externals, rebuild=REBUILD, **BACKEND_OPTS)
+## pass
+@gtscript.stencil(backend=BACKEND, rebuild=REBUILD)
 def stencil_static12(
-    cnvflg: FIELD_FLOAT,
+    cnvflg: FIELD_INT,
     aa1: FIELD_FLOAT,
-    flg: FIELD_FLOAT,
-    ktcon1: FIELD_FLOAT,
-    kbm: FIELD_FLOAT,
-    k: FIELD_FLOAT,
-    ktcon: FIELD_FLOAT,
-    dz1: FIELD_FLOAT,
+    flg: FIELD_INT,
+    ktcon1: FIELD_INT,
+    kbm: FIELD_INT,
+    k_idx: FIELD_INT,
+    ktcon: FIELD_INT,
+    #dz1: FIELD_FLOAT,
     zo: FIELD_FLOAT,
-    gamma: FIELD_FLOAT,
-    el2orc: FIELD_FLOAT,
+    #gamma: FIELD_FLOAT,
+    #el2orc: DTYPE_FLOAT,
     qeso: FIELD_FLOAT,
     to: FIELD_FLOAT,
-    rfact: FIELD_FLOAT,
-    delta: FIELD_FLOAT,
-    cp: FIELD_FLOAT,
-    hvap: FIELD_FLOAT,
+    #rfact: FIELD_FLOAT,
+    #delta: DTYPE_FLOAT,
     dbyo: FIELD_FLOAT,
-    g: FIELD_FLOAT,
     zi: FIELD_FLOAT,
-    qrch: FIELD_FLOAT,
-    tem: FIELD_FLOAT,
-    tem1: FIELD_FLOAT,
-    dz: FIELD_FLOAT,
+    #qrch: FIELD_FLOAT,
+    #tem: FIELD_FLOAT,
+    #tem1: FIELD_FLOAT,
+    #dz: FIELD_FLOAT,
     xlamue: FIELD_FLOAT,
     xlamud: FIELD_FLOAT,
-    factor: FIELD_FLOAT,
+    #factor: FIELD_FLOAT,
     qcko: FIELD_FLOAT,
     qrcko: FIELD_FLOAT,
     qo: FIELD_FLOAT,
     eta: FIELD_FLOAT,
-    dq: FIELD_FLOAT,
-    etah: FIELD_FLOAT,
-    dp: FIELD_FLOAT,
+    #dq: FIELD_FLOAT,
+    #etah: FIELD_FLOAT,
+    #dp: FIELD_FLOAT,
     del0: FIELD_FLOAT,
-    ptem: FIELD_FLOAT,
+    #ptem: FIELD_FLOAT,
     c0t: FIELD_FLOAT,
-    c1: FIELD_FLOAT,
-    qlk: FIELD_FLOAT,
+    c1: DTYPE_FLOAT,
+    #qlk: FIELD_FLOAT,
     pwo: FIELD_FLOAT,
     cnvwt: FIELD_FLOAT,
-    ptem1: FIELD_FLOAT,
+    #ptem1: FIELD_FLOAT,
     buo: FIELD_FLOAT,
     wu2: FIELD_FLOAT,
     wc: FIELD_FLOAT,
     sumx: FIELD_FLOAT,
-    kk: FIELD_FLOAT,
-    kbcon1: FIELD_FLOAT,
+    #kk: FIELD_INT,
+    kbcon1: FIELD_INT,
     drag: FIELD_FLOAT,
     dellal: FIELD_FLOAT,
-    *,
-    aafac: dtype,
-    ncloud: dtype
+    #aafac: DTYPE_FLOAT,
+    ncloud: DTYPE_INT
     # bb1: dtype,
     # bb2: dtype 
 ):
@@ -894,11 +995,14 @@ def stencil_static12(
         ktcon1 = kbm
     
     with computation(FORWARD), interval(1,-1):
+        dz1 = 0.
+        gamma = 0.
+        rfact = 0.
         aa1 = aa1[0,0,-1]
         ktcon1 = ktcon1[0,0,-1]
         flg = flg[0,0,-1]
         if (flg):
-            if(k >= ktcon and k < kbm):
+            if(k_idx >= ktcon and k_idx < kbm):
                 dz1 = zo[0,0,1] - zo
                 gamma = el2orc * qeso / (to**2)
                 rfact =  1. + delta * cp * gamma \
@@ -909,12 +1013,12 @@ def stencil_static12(
                      * rfact
 #               val = 0.
 #               aa1(i) = aa1(i) +
-##   &                 dz1 * eta(i,k) * g * delta *
+##   &                 dz1 * eta(i,k_idx) * g * delta *
 #    &                 dz1 * g * delta *
-#    &                 max(val,(qeso(i,k) - qo(i,k)))
+#    &                 max(val,(qeso(i,k_idx) - qo(i,k_idx)))
                 if(aa1 < 0.):
-                    ktcon1 = k
-                    flg = False
+                    ktcon1 = k_idx
+                    flg = 0
 
 ## to make all slice like final slice
     with computation(FORWARD), interval(-1,None):
@@ -931,8 +1035,19 @@ def stencil_static12(
 
 ## For the overshooting convection, calculate the moisture content of the entraining/detraining parcel as before. Partition convective cloud water and precipitation and detrain convective cloud water in the overshooting layers.
     with computation(FORWARD), interval(1,-1):
+        dz = 0.
+        gamma = 0.
+        qrch = 0.
+        tem = 0.
+        tem1 = 0.
+        factor = 0.
+        dq = 0.
+        etah = 0.
+        ptem = 0.
+        qlk = 0.
+        dp = 0.
         if (cnvflg):
-            if(k >= ktcon and k < ktcon1):
+            if(k_idx >= ktcon and k_idx < ktcon1):
                 dz    = zi - zi[0,0,-1]
                 gamma = el2orc * qeso / (to**2)
                 qrch = qeso \
@@ -966,10 +1081,15 @@ def stencil_static12(
 ##  compute updraft velocity square(wu2)
 ## Calculate updraft velocity square(wu2) according to Han et al.'s (2017) \cite han_et_al_2017 equation 7.
     with computation(FORWARD), interval(1,-1):
+        dz = 0.
+        tem = 0.
+        tem1 = 0.
+        ptem = 0.
+        ptem1 = 0.
         # bb1 = 4.0
         # bb2 = 0.8
         if (cnvflg):
-            if(k > kbcon1 and k < ktcon):
+            if(k_idx > kbcon1 and k_idx < ktcon):
                 dz    = zi - zi[0,0,-1]
                 tem  = 0.25 * 4.0 * (drag+drag[0,0,-1]) * dz
                 tem1 = 0.5 * 0.8 * (buo+buo[0,0,-1]) * dz
@@ -984,10 +1104,12 @@ def stencil_static12(
         sumx = 0.
     
     with computation(FORWARD), interval(1,-1):
+        dz = 0.
+        tem = 0.
         wc = wc[0,0,-1]
         sumx = sumx[0,0,-1]
         if (cnvflg):
-            if(k > kbcon1 and k < ktcon):
+            if(k_idx > kbcon1 and k_idx < ktcon):
                 dz = zi - zi[0,0,-1]
                 tem = 0.5 * ((wu2)**0.5 + (wu2[0,0,-1])**0.5)
                 wc = wc + tem * dz
@@ -1005,15 +1127,16 @@ def stencil_static12(
     with computation(PARALLEL), interval(...):
         if(cnvflg):
             if(sumx == 0.):
-                cnvflg=False
+                cnvflg=0
             else:
                 wc = wc / sumx
 #            val = 1.e-4
             if (wc < 1.e-4):
-                cnvflg=False
+                cnvflg=0
 
 ## exchange ktcon with ktcon1
     with computation(PARALLEL), interval(...):
+        kk = 1
         if(cnvflg):
             kk = ktcon
             ktcon = ktcon1
@@ -1022,25 +1145,27 @@ def stencil_static12(
 ## this section is ready for cloud water
 ##  if(ncloud > 0):
 ## pass
-@gtscript.stencil(backend=BACKEND,externals=externals, rebuild=REBUILD, **BACKEND_OPTS)
+@gtscript.stencil(backend=BACKEND, rebuild=REBUILD)
 def stencil_static13(
-    cnvflg: FIELD_FLOAT,
-    k: FIELD_FLOAT,
-    ktcon: FIELD_FLOAT,
-    gamma: FIELD_FLOAT,
-    el2orc: FIELD_FLOAT,
+    cnvflg: FIELD_INT,
+    k_idx: FIELD_INT,
+    ktcon: FIELD_INT,
+    #gamma: FIELD_FLOAT,
+    #el2orc: DTYPE_FLOAT,
     qeso: FIELD_FLOAT,
     to: FIELD_FLOAT,
-    qrch: FIELD_FLOAT,
+    #qrch: FIELD_FLOAT,
     dbyo: FIELD_FLOAT,
-    hvap: FIELD_FLOAT,
-    dq: FIELD_FLOAT,
+    #dq: FIELD_FLOAT,
     qcko: FIELD_FLOAT,
     qlko_ktcon: FIELD_FLOAT
 ):
     with computation(PARALLEL), interval(...):
+        gamma = 0.
+        qrch = 0.
+        dq = 0.
         if(cnvflg):
-            k = ktcon - 1
+            k_idx = ktcon - 1
             gamma = el2orc * qeso / (to**2)
             qrch = qeso \
                 + gamma * dbyo / (hvap * (1. + gamma))
@@ -1054,17 +1179,18 @@ def stencil_static13(
 
 ## compute precipitation efficiency in terms of windshear
 ## pass
-@gtscript.stencil(backend=BACKEND,externals=externals, rebuild=REBUILD, **BACKEND_OPTS)
+@gtscript.stencil(backend=BACKEND, rebuild=REBUILD)
 def stencil_static14(
-    cnvflg: FIELD_FLOAT,
+    cnvflg: FIELD_INT,
     vshear: FIELD_FLOAT,
-    k: FIELD_FLOAT,
-    kb: FIELD_FLOAT,
-    ktcon: FIELD_FLOAT,
+    k_idx: FIELD_INT,
+    kb: FIELD_INT,
+    ktcon: FIELD_INT,
     uo: FIELD_FLOAT,
     vo: FIELD_FLOAT,
-    ziktcon: FIELD_FLOAT,
-    zikb: FIELD_FLOAT,
+    zi: FIELD_FLOAT,
+    #zi_ktcon: FIELD_FLOAT,
+    #zi_kb: FIELD_FLOAT,
     edt: FIELD_FLOAT
 ):
     with computation(PARALLEL), interval(...):
@@ -1074,7 +1200,7 @@ def stencil_static14(
     with computation(FORWARD), interval(1,None):
         vshear = vshear[0,0,-1]
         if (cnvflg):
-            if(k > kb and k <= ktcon):
+            if(k_idx > kb and k_idx <= ktcon):
 #                shear= ((uo-uo[0,0,-1]) ** 2 \
 #                      + (vo-vo[0,0,-1]) ** 2)**0.5
                 vshear = vshear + ((uo-uo[0,0,-1]) ** 2 \
@@ -1084,10 +1210,25 @@ def stencil_static14(
     with computation(BACKWARD), interval(0,-1):
         vshear = vshear[0,0,1]
     
+    with computation(FORWARD), interval(...):
+        zi_kb = zi
+        zi_ktcon = zi
+        if(k_idx != 1):
+            zi_kb = zi_kb[0,0,-1]
+            zi_ktcon = zi_ktcon[0,0,-1]
+        if(k_idx == kb):
+            zi_kb = zi
+        if(k_idx == ktcon):
+            zi_ktcon = zi
+
+    with computation(BACKWARD), interval(0,-1):
+        zi_kb = zi_kb[0,0,1]
+        zi_ktcon = zi_ktcon[0,0,1]
+
     with computation(PARALLEL), interval(...):
         if(cnvflg):
 #use ziktcon and zikb to represent zi(ktcon) and zi(kb)          
-            vshear = 1.e3 * vshear / (ziktcon-zikb)
+            vshear = 1.e3 * vshear / (zi_ktcon-zi_kb)
 #            e1=1.591-.639*vshear \
 #            +.0953*(vshear**2)-.00496*(vshear**3)
             edt=1.-(1.591-.639*vshear \
