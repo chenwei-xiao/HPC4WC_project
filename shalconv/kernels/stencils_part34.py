@@ -157,7 +157,7 @@ def comp_tendencies( g         : DTYPE_FLOAT,
                                 eta_prev * dv3q - \
                                 eta_prev * dv2q * tem * dz + \
                                 eta_prev * tem1 * 0.5 * dz * \
-                                  (qrcko[0, 0, 0] + qrcko[0, 0, -1]) ) * gdp
+                                  (qrcko[0, 0, 0] + qcko[0, 0, -1]) ) * gdp
                                   
             tem1   = eta_curr * (uo[0, 0,  0] - ucko[0, 0,  0])
             tem2   = eta_prev * (uo[0, 0, -1] - ucko[0, 0, -1])
@@ -197,17 +197,19 @@ def comp_tendencies( g         : DTYPE_FLOAT,
         # bechtold_et_al_2008, calculate the convective turnover 
         # time using the mean updraft velocity (wc) and the cloud 
         # depth. It is also proportional to the grid size (gdx).
-        tem = zi_ktcon1 - zi_kbcon1
-        
-        tfac   = 1.0 + gdx/75000.0
-        dtconv = tfac * tem/wc
-        dtconv = max(dtconv, dtmin)
-        dtconv = max(dtconv, dt2)
-        dtconv = min(dtconv, dtmax)
-        
-        # Initialize field for advective time scale computation
-        sumx  = 0.0
-        umean = 0.0
+        if cnvflg == 1:
+            
+            tem = zi_ktcon1 - zi_kbcon1
+            
+            tfac   = 1.0 + gdx/75000.0
+            dtconv = tfac * tem/wc
+            dtconv = max(dtconv, dtmin)
+            dtconv = max(dtconv, dt2)
+            dtconv = min(dtconv, dtmax)
+
+            # Initialize field for advective time scale computation
+            sumx  = 0.0
+            umean = 0.0
     
     # Calculate advective time scale (tauadv) using a mean cloud layer 
     # wind speed (propagate forward)
