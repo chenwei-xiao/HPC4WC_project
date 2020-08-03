@@ -5,13 +5,58 @@ from shalconv.funcphys import fpvsx_gt as fpvs
 from . import *
 
 from shalconv.physcons import (
-    con_g     as g,
     con_cp    as cp,
     con_hvap  as hvap,
+    con_rv    as rv,
+    con_fvirt as fv,
+    con_t0c   as t0c,
+    con_rd    as rd,
+    con_cvap  as cvap,
+    con_cliq  as cliq,
     con_eps   as eps,
-    con_epsm1 as epsm1,
+    con_epsm1 as epsm1
 )
+elocp      = hvap/cp
+el2orc     = hvap * hvap/(rv * cp)
+d0         = 0.001
+cm         = 1.0
+delta      = fv
+fact1      = (cvap - cliq)/rv
+fact2      = hvap/rv - fact1 * t0c
+clamd      = 0.1
+tkemx      = 0.65
+tkemn      = 0.05
+dtke       = tkemx - tkemn
+dthk       = 25.0
+cinpcrmx   = 180.0
+cinpcrmn   = 120.0
+cinacrmx   = -120.0
+cinacrmn   = -80.0
+crtlamd    = 3.0e-4
+dtmax      = 10800.0
+dtmin      = 600.0
+bet1       = 1.875
+cd1        = 0.506
+f1         = 2.0
+gam1       = 0.5
+betaw      = 0.03
+dxcrt      = 15.0e3
+h1         = 0.33333333
+tf         = 233.16
+tcr        = 263.16
+tcrf       = 1.0/(tcr - tf)
 
+aafac   = 0.05
+evfact  = 0.3
+evfactl = 0.3
+w1l     = -8.0e-3 
+w2l     = -4.0e-2
+w3l     = -5.0e-3 
+w4l     = -5.0e-4
+w1s     = -2.0e-4
+w2s     = -2.0e-3
+w3s     = -1.0e-3
+w4s     = -2.0e-5
 
 externals = {
     "fpvs":fpvs
@@ -36,10 +81,10 @@ def stencil_static0(
     #dqsdp: FIELD_FLOAT,
     #desdt: FIELD_FLOAT,
     #dqsdt: FIELD_FLOAT,
-    fact1: DTYPE_FLOAT,
-    fact2: DTYPE_FLOAT,
+    #fact1: DTYPE_FLOAT,
+    #fact2: DTYPE_FLOAT,
     #gamma: FIELD_FLOAT,
-    el2orc: DTYPE_FLOAT,
+    #el2orc: DTYPE_FLOAT,
     qeso: FIELD_FLOAT,
     #dt: FIELD_FLOAT,
     #dq: FIELD_FLOAT,
@@ -197,20 +242,20 @@ def stencil_static2(
     # w2: FIELD_FLOAT,
     # w3: FIELD_FLOAT,
     # w4: FIELD_FLOAT,
-    w1l: DTYPE_FLOAT,
-    w2l: DTYPE_FLOAT,
-    w3l: DTYPE_FLOAT,
-    w4l: DTYPE_FLOAT,
-    w1s: DTYPE_FLOAT,
-    w2s: DTYPE_FLOAT,
-    w3s: DTYPE_FLOAT,
-    w4s: DTYPE_FLOAT,
+    # w1l: DTYPE_FLOAT,
+    # w2l: DTYPE_FLOAT,
+    # w3l: DTYPE_FLOAT,
+    # w4l: DTYPE_FLOAT,
+    # w1s: DTYPE_FLOAT,
+    # w2s: DTYPE_FLOAT,
+    # w3s: DTYPE_FLOAT,
+    # w4s: DTYPE_FLOAT,
     #tem: FIELD_FLOAT,
     #ptem: FIELD_FLOAT,
     #ptem1: FIELD_FLOAT,
     #cinpcr: FIELD_FLOAT,
-    cinpcrmx: DTYPE_FLOAT,
-    cinpcrmn: DTYPE_FLOAT,
+    # cinpcrmx: DTYPE_FLOAT,
+    # cinpcrmn: DTYPE_FLOAT,
     pfld: FIELD_FLOAT
     #tem1: FIELD_FLOAT,
     #pfld_kb: FIELD_FLOAT,
@@ -293,13 +338,13 @@ def stencil_static3(
     zo: FIELD_FLOAT,
     #tem: FIELD_FLOAT,
     qtr: FIELD_FLOAT,
-    tkemn: DTYPE_FLOAT,
-    tkemx: DTYPE_FLOAT,
+    # tkemn: DTYPE_FLOAT,
+    # tkemx: DTYPE_FLOAT,
     clamt: FIELD_FLOAT,
-    clam: DTYPE_FLOAT,
-    clamd: DTYPE_FLOAT,
+    clam: DTYPE_FLOAT
+    # clamd: DTYPE_FLOAT,
     #tem1: FIELD_FLOAT,
-    dtke: DTYPE_FLOAT
+    # dtke: DTYPE_FLOAT
 ):
     with computation(PARALLEL), interval(...):
         sumx = 0.
@@ -316,18 +361,13 @@ def stencil_static3(
                 sumx = sumx + dz
 
     with computation(PARALLEL), interval(...):
-        tem = 0.
-        tem1 = 0.
-        if(cnvflg):
+        if cnvflg:
             tkemean = tkemean / sumx
-            if(tkemean > tkemx): #tkemx, clam, clamd, tkemnm, dtke to be 3d
-                clamt = clam + clamd 
-            elif(tkemean < tkemn):
+            if tkemean > tkemx:  # tkemx, clam, clamd, tkemnm, dtke to be 3d
+                clamt = clam + clamd
+            elif tkemean < tkemn:
                 clamt = clam - clamd
-            else:
-                tem = tkemx - tkemean ## error mark 7/31
-                tem1 = 1. - 2. *  tem / dtke
-                clamt = clam + clamd * tem1
+            clamt = (clam + clamd + 1.0 - 2.0 * (tkemx - tkemean) / dtke) if (not tkemean) > tkemx and (not tkemean < tkemn) else clamt
 
 ## else :
 @gtscript.stencil(backend=BACKEND, rebuild=REBUILD)
@@ -478,7 +518,7 @@ def stencil_static7(
     heo: FIELD_FLOAT,
     dbyo: FIELD_FLOAT,
     heso: FIELD_FLOAT,
-    cm: DTYPE_FLOAT,
+    #cm: DTYPE_FLOAT,
     #ptem: FIELD_FLOAT,
     pgcon: DTYPE_FLOAT,
     #ptem1: FIELD_FLOAT,
@@ -550,7 +590,7 @@ def stencil_static9(
     kbcon: FIELD_INT,
     dbyo: FIELD_FLOAT,
     # tem: FIELD_FLOAT,
-    dthk: DTYPE_FLOAT,
+    #dthk: DTYPE_FLOAT,
     pfld: FIELD_FLOAT,
     # pfld_kbcon: FIELD_FLOAT,
     # pfld_kbcon1: FIELD_FLOAT,
@@ -618,30 +658,30 @@ def stencil_static10(
     #dz1: FIELD_FLOAT,
     zo: FIELD_FLOAT,
     #gamma: FIELD_FLOAT,
-    el2orc: DTYPE_FLOAT,
+    #el2orc: DTYPE_FLOAT,
     qeso: FIELD_FLOAT,
     to: FIELD_FLOAT,
     #rfact: FIELD_FLOAT,
-    delta: FIELD_FLOAT,
+    #delta: DTYPE_FLOAT,
     dbyo: FIELD_FLOAT,
     qo: FIELD_FLOAT,
     # w1: FIELD_FLOAT,
     # w2: FIELD_FLOAT,
     # w3: FIELD_FLOAT,
     # w4: FIELD_FLOAT,
-    w1l: DTYPE_FLOAT,
-    w2l: DTYPE_FLOAT,
-    w3l: DTYPE_FLOAT,
-    w4l: DTYPE_FLOAT,
-    w1s: DTYPE_FLOAT,
-    w2s: DTYPE_FLOAT,
-    w3s: DTYPE_FLOAT,
-    w4s: DTYPE_FLOAT,
+    # w1l: DTYPE_FLOAT,
+    # w2l: DTYPE_FLOAT,
+    # w3l: DTYPE_FLOAT,
+    # w4l: DTYPE_FLOAT,
+    # w1s: DTYPE_FLOAT,
+    # w2s: DTYPE_FLOAT,
+    # w3s: DTYPE_FLOAT,
+    # w4s: DTYPE_FLOAT,
     pdot: FIELD_FLOAT,
     #tem: FIELD_FLOAT,
     #tem1: FIELD_FLOAT,
-    cinacrmx: DTYPE_FLOAT,
-    cinacrmn: DTYPE_FLOAT,
+    # cinacrmx: DTYPE_FLOAT,
+    # cinacrmn: DTYPE_FLOAT,
     #cinacr: FIELD_FLOAT,
     islimsk: FIELD_INT
 ):
@@ -732,7 +772,7 @@ def stencil_static11(
     #dz: FIELD_FLOAT,
     zi: FIELD_FLOAT,
     #gamma: FIELD_FLOAT,
-    el2orc: DTYPE_FLOAT,
+    #el2orc: DTYPE_FLOAT,
     qeso: FIELD_FLOAT,
     to: FIELD_FLOAT,
     #tem: FIELD_FLOAT,
@@ -753,7 +793,7 @@ def stencil_static11(
     #rfact: FIELD_FLOAT,
     drag: FIELD_FLOAT,
     zo: FIELD_FLOAT,
-    delta: DTYPE_FLOAT,
+    #delta: DTYPE_FLOAT,
     k_idx: FIELD_INT,
     #dz1: FIELD_FLOAT,
     pwo: FIELD_FLOAT,
@@ -906,11 +946,11 @@ def stencil_static12(
     #dz1: FIELD_FLOAT,
     zo: FIELD_FLOAT,
     #gamma: FIELD_FLOAT,
-    el2orc: DTYPE_FLOAT,
+    #el2orc: DTYPE_FLOAT,
     qeso: FIELD_FLOAT,
     to: FIELD_FLOAT,
     #rfact: FIELD_FLOAT,
-    delta: DTYPE_FLOAT,
+    #delta: DTYPE_FLOAT,
     dbyo: FIELD_FLOAT,
     zi: FIELD_FLOAT,
     #qrch: FIELD_FLOAT,
@@ -943,7 +983,7 @@ def stencil_static12(
     kbcon1: FIELD_INT,
     drag: FIELD_FLOAT,
     dellal: FIELD_FLOAT,
-    aafac: DTYPE_FLOAT,
+    #aafac: DTYPE_FLOAT,
     ncloud: DTYPE_INT
     # bb1: dtype,
     # bb2: dtype 
@@ -1111,7 +1151,7 @@ def stencil_static13(
     k_idx: FIELD_INT,
     ktcon: FIELD_INT,
     #gamma: FIELD_FLOAT,
-    el2orc: DTYPE_FLOAT,
+    #el2orc: DTYPE_FLOAT,
     qeso: FIELD_FLOAT,
     to: FIELD_FLOAT,
     #qrch: FIELD_FLOAT,

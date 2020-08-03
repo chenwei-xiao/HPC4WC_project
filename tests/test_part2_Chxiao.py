@@ -32,8 +32,7 @@ def samfshalcnv_part2(data_dict):
 
 ############################################Static control###############################################
     ### Search in the PBL for the level of maximum moist static energy to start the ascending parcel.
-    stencil_static0( cnvflg, hmax, heo, kb, k_idx, kpbl, kmax, zo, to, fact1,
-                     fact2, el2orc, qeso, qo, po, uo, vo, heso, pfld)
+    stencil_static0( cnvflg, hmax, heo, kb, k_idx, kpbl, kmax, zo, to, qeso, qo, po, uo, vo, heso, pfld)
     
     ### Search below the index "kbm" for the level of free convection (LFC) where the condition.
     stencil_static1( cnvflg, flg, kbcon, kmax, k_idx, kbm, kb, heo, heso)
@@ -42,8 +41,7 @@ def samfshalcnv_part2(data_dict):
     if exit_routine(cnvflg, im): return
 
     ### Determine the vertical pressure velocity at the LFC.
-    stencil_static2( cnvflg, pdot, dot, islimsk, k_idx, kbcon, kb, w1l, w2l, 
-                     w3l, w4l, w1s, w2s, w3s, w4s, cinpcrmx, cinpcrmn, pfld)
+    stencil_static2( cnvflg, pdot, dot, islimsk, k_idx, kbcon, kb, pfld)
     
     ### If no LFC, return to the calling routine without modifying state variables.
     if exit_routine(cnvflg, im): return
@@ -52,7 +50,7 @@ def samfshalcnv_part2(data_dict):
     if(ntk > 0): 
         qtr_ntr = gt.storage.from_array(slice_to_3d(qtr[:, :, ntr]), BACKEND, default_origin)
         stencil_static3( sumx, tkemean, cnvflg, k_idx, kb, kbcon, zo, qtr_ntr,
-                         tkemn, tkemx, clamt, clam, clamd, dtke)
+                         clamt, clam, dtke)
         qtr[:,:,ntr] = qtr_ntr.view(np.ndarray)[0,:,:]
     else:
         stencil_static4( cnvflg, clamt, clam
@@ -63,34 +61,33 @@ def samfshalcnv_part2(data_dict):
                      eta, ktconn, kmax, kbm, hcko, ucko, vcko, heo, uo, vo)
 
     stencil_static7( cnvflg, k_idx, kb, kmax, zi, xlamue, xlamud, hcko, heo, dbyo,
-                     heso, cm, pgcon, ucko, uo, vcko, vo)
+                     heso, pgcon, ucko, uo, vcko, vo)
 
     stencil_static9( cnvflg, flg, kbcon1, kmax, k_idx, kbm, kbcon, dbyo,
-                     dthk, pfld)
+                     pfld)
     
     if exit_routine(cnvflg, im): return
 
     ### calculate convective inhibition
-    stencil_static10( cina, cnvflg, k_idx, kb, kbcon1, zo, el2orc, qeso, to, delta,
-                      dbyo, qo, w1l, w2l, w3l, w4l, w1s, w2s, w3s, w4s, pdot,
-                      cinacrmx, cinacrmn, islimsk)
+    stencil_static10( cina, cnvflg, k_idx, kb, kbcon1, zo, el2orc, qeso, to,
+                      dbyo, qo, pdot, islimsk)
     
     if exit_routine(cnvflg, im): return
 
     stencil_static11( flg, cnvflg, ktcon, kbm, kbcon1, dbyo, kbcon, del0, xmbmax,
-                     dt2, aa1, kb, qcko, qo, qrcko, zi, el2orc, qeso, to, xlamue, 
-                     xlamud, eta, c0t, c1, dellal, buo, drag, zo, delta, k_idx, pwo,
+                     delt, aa1, kb, qcko, qo, qrcko, zi, el2orc, qeso, to, xlamue, 
+                     xlamud, eta, c0t, c1, dellal, buo, drag, zo, k_idx, pwo,
                      cnvwt)
     
     if exit_routine(cnvflg, im): return
 
-    stencil_static12( cnvflg, aa1, flg, ktcon1, kbm, k_idx, ktcon, zo, el2orc, qeso, 
-                     to, delta, dbyo, zi, xlamue, xlamud, qcko, qrcko, qo, eta, del0,
-                     c0t, c1, pwo, cnvwt, buo, wu2, wc, sumx, kbcon1, drag, dellal, aafac)
+    stencil_static12( cnvflg, aa1, flg, ktcon1, kbm, k_idx, ktcon, zo, qeso, 
+                     to, dbyo, zi, xlamue, xlamud, qcko, qrcko, qo, eta, del0,
+                     c0t, c1, pwo, cnvwt, buo, wu2, wc, sumx, kbcon1, drag, dellal)
 
     
     if(ncloud > 0):
-        stencil_static13( cnvflg, k_idx, ktcon, el2orc, qeso, to, dbyo, qcko, qlko_ktcon)
+        stencil_static13( cnvflg, k_idx, ktcon, qeso, to, dbyo, qcko, qlko_ktcon)
     else:
         stencil_static14( cnvflg, vshear, k_idx, kb, ktcon, uo, vo, zi, edt)
     
