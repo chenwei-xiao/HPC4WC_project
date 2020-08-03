@@ -535,7 +535,7 @@ def feedback_control_update( km     : DTYPE_INT,
                 qevap = 0.0
                 
                 if cnvflg == 1 and k_idx > kb and k_idx < ktcon:
-                    rn = rn[0, 0, 1] + pwo * xmb * 0.001 * dt2
+                    rn = rn + pwo * xmb * 0.001 * dt2
                     
                 if flg == 1 and k_idx < ktcon:
                     
