@@ -1,7 +1,8 @@
 source ~/HPC4WC_venv/bin/activate
 module load daint-gpu
 module swap PrgEnv-cray PrgEnv-gnu
-module swap gcc gcc/7.3.0
+#module swap gcc gcc/7.3.0
+module swap gcc gcc/8.3.0
 module load cray-netcdf
 module load CMake
 export SERIALBOX_DIR=/project/c14/install/daint/serialbox2_master/gnu_debug

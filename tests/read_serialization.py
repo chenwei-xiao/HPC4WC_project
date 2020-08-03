@@ -23,7 +23,7 @@ def read_serialization_part3():
     var_list = ['ix', 'km', 'delp', 'garea', 'qtr', 'u1', 'v1', 'kb',
                 'kbcon', 'kbcon1', 'ktcon', 'ktcon1', 'kmax', 'del',
                 'umean', 'tauadv', 'gdx', 'dtconv', 'po', 'xlamud',
-                'xmb', 'xmbmax', 'to', 'qo', 'uo', 'vo', 'ctro', 'qaero',
+                'xmb', 'xmbmax', 'to', 'qo', 'uo', 'vo', 'ctro', #'qaero',
                 'wc', 'scaldfunc', 'sigmagfm', 'qlko_ktcon', 'xlamue',
                 'heo', 'dellah', 'dellaq', 'dellae', 'dellau', 'dellav', 'dellal',
                 'hcko', 'ucko', 'vcko', 'qcko', 'qrcko', 'ecko', 'eta',
@@ -37,7 +37,7 @@ def read_serialization_part4():
                 'kmax', 'del', 'delhbar', 'delq', 'delq2', 'delqbar',
                 'delqev', 'deltbar', 'deltv', 'edt', 'qcond', 'qevap',
                 'rntot', 'xmb', 'delubar', 'delvbar', 'pfld', #delebar(ix,ntr)
-                'qeso', 'ctr', 'qaero', 'sigmagfm', 'dellal', 'dellah',
+                'qeso', 'ctr', 'sigmagfm', 'dellal', 'dellah', #'qaero',
                 'dellaq', 'dellae', 'dellau', 'dellav', 'eta', 'pwo',
                 'cnvwt', 'cnvflg', 'flg']
     return read_serialization_partx(var_list, 4)
