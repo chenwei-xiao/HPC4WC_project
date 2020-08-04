@@ -200,7 +200,6 @@ def comp_tendencies( g         : DTYPE_FLOAT,
         if cnvflg == 1:
             
             tem = zi_ktcon1 - zi_kbcon1
-            
             tfac   = 1.0 + gdx/75000.0
             dtconv = tfac * tem/wc
             dtconv = max(dtconv, dtmin)
@@ -247,8 +246,12 @@ def comp_tendencies( g         : DTYPE_FLOAT,
             umean  = max(umean, val)  # Passing literals (e.g. 1.0) to functions might cause errors in conditional statements
             tauadv = gdx/umean
             
-            if k_idx == kbcon:
-                
+    with computation(FORWARD):
+        
+        with interval(0, 1):
+            
+            if cnvflg == 1 and k_idx == kbcon:
+
                 # From Han et al.'s (2017) \cite han_et_al_2017 equation 
                 # 6, calculate cloud base mass flux as a function of the 
                 # mean updraft velocity
@@ -256,7 +259,7 @@ def comp_tendencies( g         : DTYPE_FLOAT,
                 tfac = tauadv/dtconv
                 tfac = min(tfac, val)  # Same as above: literals
                 xmb  = tfac * betaw * rho * wc
-                
+
                 # For scale-aware parameterization, the updraft fraction 
                 # (sigmagfm) is first computed as a function of the 
                 # lateral entrainment rate at cloud base (see Han et 
@@ -267,13 +270,52 @@ def comp_tendencies( g         : DTYPE_FLOAT,
                 tem  = min(tem, val2)
                 tem  = 0.2/tem
                 tem1 = 3.14 * tem * tem
-                
+
                 sigmagfm = tem1/garea
                 sigmagfm = max(sigmagfm, val3)
                 sigmagfm = min(sigmagfm, val4)
             
-            # Then, calculate the reduction factor (scaldfunc) of the 
-            # vertical convective eddy transport of mass flux as a 
+        with interval(1, None):
+        
+            if cnvflg == 1 and k_idx == kbcon:
+
+                # From Han et al.'s (2017) \cite han_et_al_2017 equation 
+                # 6, calculate cloud base mass flux as a function of the 
+                # mean updraft velocity
+                rho  = po * 100.0 / (rd * to)
+                tfac = tauadv/dtconv
+                tfac = min(tfac, val)  # Same as above: literals
+                xmb  = tfac * betaw * rho * wc
+
+                # For scale-aware parameterization, the updraft fraction 
+                # (sigmagfm) is first computed as a function of the 
+                # lateral entrainment rate at cloud base (see Han et 
+                # al.'s (2017) \cite han_et_al_2017 equation 4 and 5), 
+                # following the study by Grell and Freitas (2014) \cite 
+                # grell_and_freitus_2014
+                tem  = max(xlamue, val1)
+                tem  = min(tem, val2)
+                tem  = 0.2/tem
+                tem1 = 3.14 * tem * tem
+
+                sigmagfm = tem1/garea
+                sigmagfm = max(sigmagfm, val3)
+                sigmagfm = min(sigmagfm, val4)
+
+            else:
+
+                xmb      = xmb[0, 0, -1]
+                sigmagfm = sigmagfm[0, 0, -1]
+                
+    with computation(BACKWARD), interval(0, -1):
+        
+        if cnvflg == 1:
+            xmb      = xmb[0, 0, 1]
+            sigmagfm = sigmagfm[0, 0, 1]
+     
+    with computation(PARALLEL), interval(...):
+        
+            # Vertical convective eddy transport of mass flux as a 
             # function of updraft fraction from the studies by Arakawa 
             # and Wu (2013) \cite arakawa_and_wu_2013 (also see Han et 
             # al.'s (2017) \cite han_et_al_2017 equation 1 and 2). The 
@@ -281,15 +323,16 @@ def comp_tendencies( g         : DTYPE_FLOAT,
             # parameterization is obtained from the mass flux when 
             # sigmagfm << 1, multiplied by the reduction factor (Han et 
             # al.'s (2017) \cite han_et_al_2017 equation 2).
-            if gdx < dxcrt:
-                scaldfunc = (1.0 - sigmagfm) * (1.0 - sigmagfm)
-                scaldfunc = min(scaldfunc, val)
-                scaldfunc = max(scaldfunc, val5)
-            else:
-                scaldfunc = 1.0
-            
-            xmb = xmb * scaldfunc
-            xmb = min(xmb, xmbmax)
+            if cnvflg == 1:
+                if gdx < dxcrt:
+                    scaldfunc = (1.0 - sigmagfm) * (1.0 - sigmagfm)
+                    scaldfunc = min(scaldfunc, val)
+                    scaldfunc = max(scaldfunc, val5)
+                else:
+                    scaldfunc = 1.0
+
+                xmb = xmb * scaldfunc
+                xmb = min(xmb, xmbmax)
 
 
 @gtscript.stencil(backend=BACKEND, rebuild=REBUILD)
