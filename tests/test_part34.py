@@ -95,21 +95,25 @@ def samfshalcnv_part3(input_dict, data_dict):
                      tauadv, xmb, sigmagfm, garea, scaldfunc, xmbmax,
                      sumx, umean)
                      
-    return dellah, dellaq, dellau, dellav, dellal
+    return dellah, dellaq, dellau, dellav, dellal, xmb, sigmagfm
 
 def test_part3():
+    
     input_dict = read_data(0, True, path = DATAPATH)
     data_dict = read_serialization_part3()
     out_dict = read_serialization_part4()
     
-    dellah, dellaq, dellau, dellav, dellal = samfshalcnv_part3(input_dict, data_dict)
+    dellah, dellaq, dellau, dellav, dellal, xmb, sigmagfm = samfshalcnv_part3(input_dict, data_dict)
+    
+    print(sigmagfm.view(np.ndarray))
+    print(out_dict["sigmagfm"].view(np.ndarray))
     
     compare_data({"dellah":dellah.view(np.ndarray),"dellaq":dellaq.view(np.ndarray),
                   "dellau":dellau.view(np.ndarray),"dellav":dellav.view(np.ndarray),
-                  "dellal":dellal.view(np.ndarray)},
+                  "dellal":dellal.view(np.ndarray),"xmb":xmb.view(np.ndarray),"sigmagfm":sigmagfm.view(np.ndarray)},
                  {"dellah":out_dict["dellah"].view(np.ndarray),"dellaq":out_dict["dellaq"].view(np.ndarray),
                   "dellau":out_dict["dellau"].view(np.ndarray),"dellav":out_dict["dellav"].view(np.ndarray),
-                  "dellal":out_dict["dellal"].view(np.ndarray)})
+                  "dellal":out_dict["dellal"].view(np.ndarray),"xmb":out_dict["xmb"].view(np.ndarray),"sigmagfm":out_dict["sigmagfm"].view(np.ndarray)})
 
 if __name__ == "__main__":
     test_part3()
