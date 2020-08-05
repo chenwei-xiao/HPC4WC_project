@@ -84,6 +84,8 @@ def samfshalcnv_part3(input_dict, data_dict):
     sumx = data_dict["sumx"]
     umean = data_dict["umean"]
     
+    #import pdb; pdb.set_trace() 
+    
     # Calculate the tendencies of the state variables (per unit cloud base 
     # mass flux) and the cloud base mass flux
     comp_tendencies( g, betaw, dtmin, dt2, dtmax, dxcrt, cnvflg, k_idx,
@@ -97,6 +99,87 @@ def samfshalcnv_part3(input_dict, data_dict):
                      
     return dellah, dellaq, dellau, dellav, dellal, xmb, sigmagfm
 
+
+def samfshalcnv_part4(input_dict, data_dict):
+    """
+    Scale-Aware Mass-Flux Shallow Convection
+    
+    :param data_dict: Dict of parameters required by the scheme
+    :type data_dict: Dict of either scalar or gt4py storage
+    """
+    ix = input_dict["ix"]
+    km = input_dict["km"]
+    shape = (1, ix, km)
+    
+    g = grav
+    dt2 = input_dict["delt"]
+    evfact = 0.3
+    evfactl = 0.3
+    elocp = hvap/cp
+    el2orc = hvap * hvap/(rv * cp)
+    cnvflg = data_dict["cnvflg"]
+    k_idx = gt.storage.from_array(np.indices(shape)[2] + 1, BACKEND, default_origin, dtype=DTYPE_INT)
+    kmax = data_dict["kmax"]
+    kb = data_dict["kb"]
+    ktcon = data_dict["ktcon"]
+    flg = data_dict["flg"]
+    islimsk = data_dict["islimsk"]
+    ktop = data_dict["ktop"]
+    kbot = data_dict["kbot"]
+    kcnv = data_dict["kcnv"]
+    kbcon = data_dict["kbcon"]
+    qeso = data_dict["qeso"]
+    pfld = data_dict["pfld"]
+    delhbar = data_dict["delhbar"]
+    delqbar = data_dict["delqbar"]
+    deltbar = data_dict["deltbar"]
+    delubar = data_dict["delubar"]
+    delvbar = data_dict["delvbar"]
+    qcond = data_dict["qcond"]
+    dellah = data_dict["dellah"]
+    dellaq = data_dict["dellaq"]
+    dellau = data_dict["dellau"]
+    dellav = data_dict["dellav"]
+    t1 = data_dict["t1"]
+    q1 = data_dict["q1"]
+    del0 = data_dict["del"]
+    rntot = data_dict["rntot"]
+    delqev = data_dict["delqev"]
+    delq2 = data_dict["delq2"]
+    pwo = data_dict["pwo"]
+    deltv = data_dict["deltv"]
+    delq = data_dict["delq"]
+    qevap = data_dict["qevap"]
+    rn = data_dict["rn"]
+    edt = data_dict["edt"]
+    cnvw = data_dict["cnvw"]
+    cnvwt = data_dict["cnvwt"]
+    cnvc = data_dict["cnvc"]
+    ud_mf = data_dict["ud_mf"]
+    dt_mf = data_dict["dt_mf"]
+    u1 = data_dict["u1"]
+    v1 = data_dict["v1"]
+    xmb = data_dict["xmb"]
+    eta = data_dict["eta"]
+    
+    #import pdb; pdb.set_trace() 
+
+    # For the "feedback control", calculate updated values of the state 
+    # variables by multiplying the cloud base mass flux and the 
+    # tendencies calculated per unit cloud base mass flux from the 
+    # static control
+    feedback_control_update( km, dt2, g, evfact, evfactl, el2orc, elocp, 
+                             cnvflg, k_idx, kmax, kb, ktcon, flg, 
+                             islimsk, ktop, kbot, kbcon, kcnv, qeso, 
+                             pfld, delhbar, delqbar, deltbar, delubar, 
+                             delvbar, qcond, dellah, dellaq, t1, xmb, 
+                             q1, u1, dellau, v1, dellav, del0, rntot, 
+                             delqev, delq2, pwo, deltv, delq, qevap, rn, 
+                             edt, cnvw, cnvwt, cnvc, ud_mf, dt_mf, eta )
+                     
+    return kcnv, kbot, ktop, q1, t1, u1, v1, rn, cnvw, cnvc, ud_mf, dt_mf
+
+
 def test_part3():
     
     input_dict = read_data(0, True, path = DATAPATH)
@@ -105,15 +188,47 @@ def test_part3():
     
     dellah, dellaq, dellau, dellav, dellal, xmb, sigmagfm = samfshalcnv_part3(input_dict, data_dict)
     
-    print(sigmagfm.view(np.ndarray))
-    print(out_dict["sigmagfm"].view(np.ndarray))
-    
     compare_data({"dellah":dellah.view(np.ndarray),"dellaq":dellaq.view(np.ndarray),
                   "dellau":dellau.view(np.ndarray),"dellav":dellav.view(np.ndarray),
                   "dellal":dellal.view(np.ndarray),"xmb":xmb.view(np.ndarray),"sigmagfm":sigmagfm.view(np.ndarray)},
                  {"dellah":out_dict["dellah"].view(np.ndarray),"dellaq":out_dict["dellaq"].view(np.ndarray),
                   "dellau":out_dict["dellau"].view(np.ndarray),"dellav":out_dict["dellav"].view(np.ndarray),
                   "dellal":out_dict["dellal"].view(np.ndarray),"xmb":out_dict["xmb"].view(np.ndarray),"sigmagfm":out_dict["sigmagfm"].view(np.ndarray)})
+    
+def test_part4():
+    
+    #np.set_printoptions(threshold=sys.maxsize)
+    
+    input_dict = read_data(0, True, path = DATAPATH)
+    data_dict = read_serialization_part4()
+    out_dict = read_data(0, False, path = DATAPATH)
+    
+    #a_prev = data_dict["cnvc"].view(np.ndarray)[0,:,:].copy()
+    
+    kcnv, kbot, ktop, q1, t1, u1, v1, rn, cnvw, cnvc, ud_mf, dt_mf = samfshalcnv_part4(input_dict, data_dict)
+    
+    #a = cnvc.view(np.ndarray)[0,:,:]
+    #b = out_dict["cnvc"]
+    #for i in range(0, 79):
+    #    print(np.allclose(a[:, i], b[:, i], equal_nan=True))
+    #for i in range(0, 2304):
+    #    print(a_prev[i, 13], a[i, 13], b[i, 13], np.allclose(a[i, 13], b[i, 13], equal_nan=True))
+    #print(a)
+    #print(b)
+    #print(np.allclose(a, b, equal_nan=True))
+    
+    compare_data({"kcnv":kcnv.view(np.ndarray)[0,:,0],"kbot":kbot.view(np.ndarray)[0,:,0],"ktop":ktop.view(np.ndarray)[0,:,0],
+                  "q1":q1.view(np.ndarray)[0,:,:],"t1":t1.view(np.ndarray)[0,:,:],
+                  "u1":u1.view(np.ndarray)[0,:,:],"v1":v1.view(np.ndarray)[0,:,:],"rn":rn.view(np.ndarray)[0,:,0],
+                  "cnvw":cnvw.view(np.ndarray)[0,:,:],"cnvc":cnvc.view(np.ndarray)[0,:,:],"ud_mf":ud_mf.view(np.ndarray)[0,:,:],
+                  "dt_mf":dt_mf.view(np.ndarray)[0,:,:]},
+                 {"kcnv":out_dict["kcnv"],"kbot":out_dict["kbot"],"ktop":out_dict["ktop"],
+                  "q1":out_dict["q1"],"t1":out_dict["t1"],
+                  "u1":out_dict["u1"],"v1":out_dict["v1"],"rn":out_dict["rn"],
+                  "cnvw":out_dict["cnvw"],"cnvc":out_dict["cnvc"],"ud_mf":out_dict["ud_mf"],
+                  "dt_mf":out_dict["dt_mf"]})
+    
 
 if __name__ == "__main__":
     test_part3()
+    test_part4()

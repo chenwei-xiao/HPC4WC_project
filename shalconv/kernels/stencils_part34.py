@@ -417,7 +417,7 @@ def feedback_control_update( km     : DTYPE_INT,
                              dellau : FIELD_FLOAT,
                              v1     : FIELD_FLOAT,
                              dellav : FIELD_FLOAT,
-                             del0    : FIELD_FLOAT,
+                             del0   : FIELD_FLOAT,
                              rntot  : FIELD_FLOAT,
                              delqev : FIELD_FLOAT,
                              delq2  : FIELD_FLOAT,
@@ -446,6 +446,7 @@ def feedback_control_update( km     : DTYPE_INT,
         qeso = max(qeso, val)
         
         dellat = 0.0
+        fpvst1 = 0.0
         
         # - Calculate the temperature tendency from the moist 
         #   static energy and specific humidity tendencies
@@ -453,20 +454,23 @@ def feedback_control_update( km     : DTYPE_INT,
         #   horizontal wind state variables by multiplying the 
         #   cloud base mass flux-normalized tendencies by the 
         #   cloud base mass flux
-        if cnvflg == 1 and k_idx > kb and k_idx <= ktcon:
-            dellat = (dellah - hvap * dellaq)/cp
-            t1     = t1 + dellat * xmb * dt2
+        if cnvflg == 1:
+            if k_idx > kb and k_idx <= ktcon:
+                dellat = (dellah - hvap * dellaq)/cp
+                t1     = t1 + dellat * xmb * dt2
         
-        qeso = 0.01 * fpvs(t1)    # fpvs is in Pa
+        fpvst1 = 0.01 * fpvs(t1)    # fpvs is in Pa
         
-        if cnvflg == 1 and k_idx > kb and k_idx <= ktcon:
+        if cnvflg == 1:
+            if k_idx > kb and k_idx <= ktcon:
             
-                q1     = q1 + dellaq * xmb * dt2
-                u1     = u1 + dellau * xmb * dt2
-                v1     = v1 + dellav * xmb * dt2
+                q1 = q1 + dellaq * xmb * dt2
+                u1 = u1 + dellau * xmb * dt2
+                v1 = v1 + dellav * xmb * dt2
                 
                 # Recalculate saturation specific humidity using the 
                 # updated temperature
+                qeso = fpvst1
                 qeso = eps * qeso/(pfld + epsm1 * qeso)
                 qeso = max(qeso, val)
     
@@ -481,14 +485,14 @@ def feedback_control_update( km     : DTYPE_INT,
             
             if cnvflg == 1 and k_idx > kb and k_idx <= ktcon:
                 
-                    dp  = 1000.0 * del0
-                    dpg = dp/g
+                dp  = 1000.0 * del0
+                dpg = dp/g
                     
-                    delhbar = delhbar + dellah * xmb * dpg
-                    delqbar = delqbar + dellaq * xmb * dpg
-                    deltbar = deltbar + dellat * xmb * dpg
-                    delubar = delubar + dellau * xmb * dpg
-                    delvbar = delvbar + dellav * xmb * dpg
+                delhbar = delhbar + dellah * xmb * dpg
+                delqbar = delqbar + dellaq * xmb * dpg
+                deltbar = deltbar + dellat * xmb * dpg
+                delubar = delubar + dellau * xmb * dpg
+                delvbar = delvbar + dellav * xmb * dpg
         
         with interval(1, None):
             
@@ -555,7 +559,9 @@ def feedback_control_update( km     : DTYPE_INT,
     #   evaporation of convective precipitation
     # - Update column-integrated tendencies to account for 
     #   evaporation of convective precipitation
-    with computation(BACKWARD), interval(...):
+    with computation(BACKWARD):
+    
+        with interval(-1, None):
             
             evef     = 0.0
             dp       = 0.0
@@ -563,13 +569,77 @@ def feedback_control_update( km     : DTYPE_INT,
             tem      = 0.0
             tem1     = 0.0
             
-            if k_idx < km:
+            if k_idx <= kmax:
                 
-                rn      = rn[0, 0, 1]
-                flg     = flg[0, 0, 1]
-                delqev  = delqev[0, 0, 1]
-                delqbar = delqbar[0, 0, 1]
-                deltbar = deltbar[0, 0, 1]
+                deltv = 0.0
+                delq  = 0.0
+                qevap = 0.0
+                
+                if cnvflg == 1:
+                    if k_idx > kb and k_idx < ktcon:
+                        rn = rn + pwo * xmb * 0.001 * dt2
+                    
+                if flg == 1 and k_idx < ktcon:
+                    
+                    if islimsk == 1: 
+                        evef = edt * evfactl
+                    else:
+                        evef = edt * evfact
+                        
+                    qcond = evef * (q1 - qeso)/(1.0 + el2orc * qeso/(t1**2))
+                    
+                    dp = 1000.0 * del0
+                    
+                    if rn > 0.0 and qcond < 0.0:
+                        
+                        tem   = dt2 * rn
+                        tem   = sqrt(tem)
+                        tem   = -0.32 * tem
+                        tem   = exp(tem)
+                        qevap = -qcond * (1.0 - tem)
+                        tem   = 1000.0 * g/dp
+                        qevap = min(qevap, tem)
+                        delq2 = delqev + 0.001 * qevap * dp/g
+                        
+                    if rn > 0.0 and qcond < 0.0 and delq2 > rntot:
+                        
+                        qevap = 1000.0 * g * (rntot - delqev) / dp
+                        flg   = 0
+                        
+                    else:
+                        flg = flg
+                        
+                    if rn > 0.0 and qevap > 0.0:
+                        
+                        tem  = 0.001 * dp/g
+                        tem1 = qevap * tem
+                        
+                        if tem1 > rn:
+                            qevap = rn/tem
+                            rn    = 0.0
+                        else:
+                            rn = rn - tem1
+                        
+                        q1     = q1 + qevap
+                        t1     = t1 - elocp * qevap
+                        deltv  = -elocp * qevap/dt2
+                        delq   = qevap/dt2
+                        
+                        delqev = delqev + 0.001 * dp * qevap/g
+                        
+                    else:
+                        delqev = delqev
+                        
+                    delqbar = delqbar + delq  * dp/g
+                    deltbar = deltbar + deltv * dp/g
+                    
+        with interval(0, -1):
+            
+            rn      = rn[0, 0, 1]
+            flg     = flg[0, 0, 1]
+            delqev  = delqev[0, 0, 1]
+            delqbar = delqbar[0, 0, 1]
+            deltbar = deltbar[0, 0, 1]
             
             if k_idx <= kmax:
                 
@@ -577,8 +647,9 @@ def feedback_control_update( km     : DTYPE_INT,
                 delq  = 0.0
                 qevap = 0.0
                 
-                if cnvflg == 1 and k_idx > kb and k_idx < ktcon:
-                    rn = rn + pwo * xmb * 0.001 * dt2
+                if cnvflg == 1:
+                    if k_idx > kb and k_idx < ktcon:
+                        rn = rn + pwo * xmb * 0.001 * dt2
                     
                 if flg == 1 and k_idx < ktcon:
                     
@@ -648,9 +719,10 @@ def feedback_control_update( km     : DTYPE_INT,
             
         val2 = 0.2
         val3 = 0.0
-        val4 = 1.0e4
+        val4 = 1.0e6
+        cnvc_log = 0.0
         
-        cnvc = 0.04 * log(val1, val4)  # 1.0e4 seems to get reasonable results, since val1 is on average ~50
+        cnvc_log = 0.04 * log(val1, val4)  # 1.0e6 seems to get reasonable results, since val1 is on average ~50
         
         if cnvflg == 1:
             
@@ -667,7 +739,7 @@ def feedback_control_update( km     : DTYPE_INT,
                 
                 # Calculate convective cloud cover, which is used when 
                 # pdf-based cloud fraction is used
-                cnvc = min(cnvc, val2)
+                cnvc = min(cnvc_log, val2)
                 cnvc = max(cnvc, val3)
                 
             # Calculate the updraft convective mass flux
