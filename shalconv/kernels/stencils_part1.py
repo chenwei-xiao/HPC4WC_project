@@ -212,12 +212,16 @@ def init_final( km    : DTYPE_INT,
         
         # Find the index for the PBL top using the PBL height; enforce 
         # that it is lower than the maximum parcel starting level
-        if flg[0, 0, -1] and (zo <= hpbl):
+        flg = flg[0, 0, -1]
+        kpbl = kpbl[0, 0, -1]
+        if (flg == 1) and (zo <= hpbl):
             kpbl = k_idx
-            flg  = flg[0, 0, -1]
         else:
-            kpbl = kpbl[0, 0, -1]
             flg  = 0 # False
+
+    with computation(FORWARD), interval(-1, None):
+        flg = flg[0, 0, -1]
+        kpbl = kpbl[0, 0, -1]
     
     with computation(BACKWARD),interval(0,-1):
         

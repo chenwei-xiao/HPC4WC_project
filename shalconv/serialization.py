@@ -67,12 +67,11 @@ def numpy_dict_to_gt4py_dict(data_dict, backend = BACKEND):
     return new_data_dict
     
 def compare_data(exp_data, ref_data):
-    assert set(exp_data.keys()) == set(ref_data.keys()), \
-        "Entries of exp and ref dictionaries don't match"
     wrong = []
     flag = True
-    for key in ref_data:
-        if not np.allclose(exp_data[key], ref_data[key], equal_nan=True):
+    for key in exp_data:
+        mask = ~np.isnan(ref_data[key])
+        if not np.allclose(exp_data[key][mask], ref_data[key][mask]):
             wrong.append(key)
             flag = False
         else:
@@ -95,3 +94,10 @@ def read_data(tile, is_in, path = "./data"):
     vars = IN_VARS if is_in else OUT_VARS
     data = data_dict_from_var_list(vars, serializer, sp)
     return data
+
+def view_gt4pystorage(data_dict):
+    new_data_dict = {}
+    for key in data_dict:
+        data = data_dict[key]
+        new_data_dict[key] = data.view(np.ndarray)
+    return new_data_dict

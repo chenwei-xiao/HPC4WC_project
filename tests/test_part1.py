@@ -4,7 +4,8 @@ from gt4py import gtscript
 #import sys
 #sys.path.append("..")
 from shalconv.kernels.stencils_part1 import *
-from shalconv.serialization import read_data, compare_data, OUT_VARS, numpy_dict_to_gt4py_dict
+from tests.read_serialization import *
+from shalconv.serialization import *
 from shalconv import *
 from shalconv.physcons import (
     con_g     as grav,
@@ -265,87 +266,54 @@ def samfshalcnv_part1(data_dict):
     
     # Tracers loop (THIS GOES AT THE END AND POSSIBLY MERGED WITH OTHER 
     # TRACER LOOPS!) --> better use version below
-    for n in range(2, ntr+2):
+    #for n in range(2, ntr+2):
         
         #kk = n-2
         
-        qtr_shift = gt.storage.from_array(slice_to_3d(qtr[:, :, n]), BACKEND, default_origin)
+        #qtr_shift = gt.storage.from_array(slice_to_3d(qtr[:, :, n]), BACKEND, default_origin)
         
         # Initialize tracers. Keep in mind that, qtr slice is for the 
         # n-th tracer, while the other storages are slices representing 
         # the (n-2)-th tracer.
-        init_tracers( cnvflg, k_idx, kmax, ctr, ctro, ecko, qtr_shift)
-    return heo, heso, qo, qeso
+        #init_tracers( cnvflg, k_idx, kmax, ctr, ctro, ecko, qtr_shift)
+    return {"heo":heo, "heso":heso, "qo":qo, "qeso":qeso,
+            "km":km, "kbm":kbm, "kmax":kmax, "kb":kb, "kpbl":kpbl,
+            "kbcon": kbcon, "ktcon":ktcon, #"ktcon1":ktcon1, "kbcon1":kbcon1
+            "cnvflg":cnvflg, "tkemean":tkemean, "islimsk":islimsk,
+            "dot":dot, "aa1":aa1, "cina":cina, "clamt":clamt, "del":del0,
+            "pdot":pdot, "po":po, "hmax":hmax, "xlamud":xlamud, "pfld":pfld,
+            "to":to, "uo":uo, "vo":vo, "wu2":wu2, "buo":buo, "drag":drag,
+            "wc":wc, "dbyo":dbyo, "zo":zo, "xlamue":xlamue, "hcko":hcko,
+            "ucko":ucko, "vcko":vcko, "qcko":qcko, "eta":eta, "zi":zi,
+            "c0t":c0t, "sumx":sumx, "cnvwt":cnvwt, "dellal":dellal,
+            "ktconn":ktconn, "pwo":pwo, "qlko_ktcon":qlko_ktcon, "qrcko":qrcko,
+            "xmbmax":xmbmax,
+            "u1":u1, "v1":v1, "gdx":gdx, "garea":garea, "dtconv":dtconv, "delp":delp,
+            "cnvc":cnvc, "cnvw":cnvw}
 
-def call_fort_part1(fort_fun, data_dict):
-    im = data_dict["im"]
-    ix = data_dict["ix"]
-    km = data_dict["km"]
-    delt = data_dict["delt"]
-    itc = data_dict["itc"]
-    ntc = data_dict["ntc"]
-    ntk = data_dict["ntk"]
-    ntr = data_dict["ntr"]
-    delp = data_dict["delp"]
-    prslp = data_dict["prslp"]
-    psp = data_dict["psp"]
-    phil = data_dict["phil"]
-    qtr = data_dict["qtr"]
-    q1 = data_dict["q1"]
-    t1 = data_dict["t1"]
-    u1 = data_dict["u1"]
-    v1 = data_dict["v1"]
-    fscav = data_dict["fscav"]
-    rn = data_dict["rn"]
-    kbot = data_dict["kbot"]
-    ktop = data_dict["ktop"]
-    kcnv = data_dict["kcnv"]
-    islimsk = data_dict["islimsk"]
-    garea = data_dict["garea"]
-    dot = data_dict["dot"]
-    ncloud = data_dict["ncloud"]
-    hpbl = data_dict["hpbl"]
-    ud_mf = data_dict["ud_mf"]
-    dt_mf = data_dict["dt_mf"]
-    cnvw = data_dict["cnvw"]
-    cnvc = data_dict["cnvc"]
-    clam = data_dict["clam"]
-    c0s = data_dict["c0s"]
-    c1 = data_dict["c1"]
-    pgcon = data_dict["pgcon"]
-    asolfac = data_dict["asolfac"]
-    shape2d = (im, km)
-    #heo = np.zeros(shape2d)
-    #heso = np.zeros(shape2d)
-    #qo = np.zeros(shape2d)
-    #qeso = np.zeros(shape2d)
-    heo, heso, qo, qeso = fort_fun(im = im, ix = ix, km = km, delt = delt, itc = itc,
-                                   ntc = ntc, ntk = ntk, ntr = ntr, delp = delp,
-                                   prslp = prslp, psp = psp, phil = phil, qtr = qtr[:,:,:ntr+2],
-                                   q1 = q1, t1 = t1, u1 = u1, v1 = v1, fscav = fscav,
-                                   rn = rn, kbot = kbot, ktop = ktop, kcnv = kcnv,
-                                   islimsk = islimsk, garea = garea, dot = dot,
-                                   ncloud = ncloud, hpbl = hpbl, ud_mf = ud_mf,
-                                   dt_mf = dt_mf, cnvw = cnvw, cnvc = cnvc, clam = clam,
-                                   c0s = c0s, c1 = c1, pgcon = pgcon, asolfac = asolfac)
-    return heo, heso, qo, qeso
-
-from shalconv import DATAPATH
-
-def test_part1():
+def test_part1_ser():
     data_dict = read_data(0, True, path = DATAPATH)
     gt4py_dict = numpy_dict_to_gt4py_dict(data_dict)
-    heo, heso, qo, qeso = samfshalcnv_part1(gt4py_dict)
-    import numpy.f2py, os
-    os.system("f2py -c -m part1 fortran/part1.f90") #--f2cmap fortran/.f2py_f2cmap
-    #numpy.f2py.run_main(['--f2cmap', 'fortran/.f2py_f2cmap', '-c', '-m', 'part1', 'fortran/part1.f90'])
-    import part1
-    from shalconv.funcphys import fpvsx
-    t = 20.0
-    assert abs(part1.mod.fpvsx(t) - fpvsx(t)) < 1e-6, "Fortran impl and numpy impl don't match!"
-    heo_np, heso_np, qo_np, qeso_np = call_fort_part1(part1.mod.part1, data_dict)
-    compare_data({"heo":heo.view(np.ndarray)[0,:,:],"heso":heso.view(np.ndarray)[0,:,:],"qo":qo.view(np.ndarray)[0,:,:],"qeso":qeso.view(np.ndarray)[0,:,:]},
-                 {"heo":heo_np,"heso":heso_np,"qo":qo_np,"qeso":qeso_np})
+    out_dict_p2 = read_serialization_part2()
+    out_dict_p3 = read_serialization_part3()
+    out_dict_p4 = read_serialization_part4()
+    ret_dict = samfshalcnv_part1(gt4py_dict)
+    exp_data = view_gt4pystorage(ret_dict)
+    ref_data = view_gt4pystorage(out_dict_p2)
+    ref_data["u1"] = out_dict_p3["u1"].view(np.ndarray)
+    ref_data["v1"] = out_dict_p3["v1"].view(np.ndarray)
+    ref_data["gdx"] = out_dict_p3["gdx"].view(np.ndarray)
+    ref_data["garea"] = out_dict_p3["garea"].view(np.ndarray)
+    ref_data["dtconv"] = out_dict_p3["dtconv"].view(np.ndarray)
+    ref_data["delp"] = out_dict_p3["delp"].view(np.ndarray)
+    ref_data["cnvc"] = out_dict_p4["cnvc"].view(np.ndarray)
+    ref_data["cnvw"] = out_dict_p4["cnvw"].view(np.ndarray)
+    #ref_data = view_gt4pystorage({"heo":out_dict_p2["heo"], "heso":out_dict_p2["heso"],
+    #                              "qo":out_dict_p2["qo"], "qeso":out_dict_p2["qeso"],
+    #                              "km":out_dict_p2["km"], "kbm":out_dict_p2["kbm"],
+    #                              "kmax":out_dict_p2["kmax"], "kcnv":out_dict_p4["kcnv"],
+    #                              "cnvflg":out_dict_p2["cnvflg"]})
+    compare_data(exp_data, ref_data)
 
 if __name__ == "__main__":
-    test_part1()
+    test_part1_ser()
