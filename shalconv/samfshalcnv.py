@@ -371,8 +371,8 @@ def samfshalcnv_func(data_dict):
 
     # if(ncloud > 0):
     stencil_static13(cnvflg, k_idx, ktcon, qeso, to, dbyo, qcko, qlko_ktcon)
-    # else:
-    #     stencil_static14(cnvflg, vshear, k_idx, kb, ktcon, uo, vo, zi, edt)
+    
+    stencil_static14(cnvflg, vshear, k_idx, kb, ktcon, uo, vo, zi, edt)
 
     #=======================================PART34=====================================
     #=================================================================================
