@@ -370,11 +370,10 @@ def comp_tendencies_tr( g      : DTYPE_FLOAT,
             
             dellae = dellae + (tem1 - tem2) * g/dp
             
-    with computation(PARALLEL), interval(...):
+    with computation(PARALLEL), interval(1, None):
         
         # Cloud top
-        if cnvflg == 1:
-            if ktcon == k_idx:
+        if cnvflg == 1 and ktcon == k_idx:
                 
                 dp = 1000.0 * del0
                 

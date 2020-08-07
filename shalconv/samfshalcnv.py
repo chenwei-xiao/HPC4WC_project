@@ -129,8 +129,6 @@ def samfshalcnv_func(data_dict):
     qlko_ktcon = gt.storage.zeros(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
     sumx = gt.storage.zeros(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
     tx1 = gt.storage.zeros(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
-    zi_ktcon1 = gt.storage.zeros(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
-    zi_kbcon1 = gt.storage.zeros(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
 
     ### Local storages for 2D arrays (float) ###
     pfld = gt.storage.zeros(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
@@ -195,6 +193,8 @@ def samfshalcnv_func(data_dict):
     
     ### PART3 Specific
     dellae_slice = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    zi_ktcon1 = gt.storage.zeros(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    zi_kbcon1 = gt.storage.zeros(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
     
     ### PART4 Specific
     delebar_slice = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
