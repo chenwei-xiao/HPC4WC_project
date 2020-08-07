@@ -382,8 +382,7 @@ def comp_tendencies_tr( g      : DTYPE_FLOAT,
             
 
 @gtscript.stencil(backend=BACKEND, rebuild=REBUILD, externals={"fpvs": fpvs, "min": min, "max": max, "exp": exp, "sqrt": sqrt})
-def feedback_control_update( km     : DTYPE_INT,
-                             dt2    : DTYPE_FLOAT,
+def feedback_control_update( dt2    : DTYPE_FLOAT,
                              g      : DTYPE_FLOAT,
                              evfact : DTYPE_FLOAT,
                              evfactl: DTYPE_FLOAT,
@@ -521,8 +520,9 @@ def feedback_control_update( km     : DTYPE_INT,
         # To avoid conditionals in the full interval
         with interval(-1, None):
             
-            if cnvflg == 1 and k_idx > kb and k_idx < ktcon:
-                rntot = rntot + pwo * xmb * 0.001 * dt2
+            if cnvflg == 1:
+				if k_idx > kb and k_idx < ktcon:
+					rntot = rntot + pwo * xmb * 0.001 * dt2
         
         with interval(0, -1):
             if cnvflg == 1:

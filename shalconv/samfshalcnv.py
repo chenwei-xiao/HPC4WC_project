@@ -369,8 +369,8 @@ def samfshalcnv_func(data_dict):
                      to, dbyo, zi, xlamue, xlamud, qcko, qrcko, qo, eta, del0,
                      c0t, c1, pwo, cnvwt, buo, wu2, wc, sumx, kbcon1, drag, dellal, ncloud)
 
-    # if(ncloud > 0):
-    stencil_static13(cnvflg, k_idx, ktcon, qeso, to, dbyo, qcko, qlko_ktcon)
+    if(ncloud > 0):
+	    stencil_static13(cnvflg, k_idx, ktcon, qeso, to, dbyo, qcko, qlko_ktcon)
     
     stencil_static14(cnvflg, vshear, k_idx, kb, ktcon, uo, vo, zi, edt)
 
@@ -391,7 +391,7 @@ def samfshalcnv_func(data_dict):
     # variables by multiplying the cloud base mass flux and the
     # tendencies calculated per unit cloud base mass flux from the
     # static control
-    feedback_control_update( km, dt2, g, evfact, evfactl, el2orc, elocp,
+    feedback_control_update( dt2, g, evfact, evfactl, el2orc, elocp,
                              cnvflg, k_idx, kmax, kb, ktcon, flg,
                              islimsk, ktop, kbot, kbcon, kcnv, qeso,
                              pfld, delhbar, delqbar, deltbar, delubar,

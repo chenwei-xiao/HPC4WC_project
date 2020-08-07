@@ -168,7 +168,7 @@ def samfshalcnv_part4(input_dict, data_dict):
     # variables by multiplying the cloud base mass flux and the 
     # tendencies calculated per unit cloud base mass flux from the 
     # static control
-    feedback_control_update( km, dt2, g, evfact, evfactl, el2orc, elocp, 
+    feedback_control_update( dt2, g, evfact, evfactl, el2orc, elocp, 
                              cnvflg, k_idx, kmax, kb, ktcon, flg, 
                              islimsk, ktop, kbot, kbcon, kcnv, qeso, 
                              pfld, delhbar, delqbar, deltbar, delubar, 
