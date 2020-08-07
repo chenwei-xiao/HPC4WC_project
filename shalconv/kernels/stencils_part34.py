@@ -521,8 +521,8 @@ def feedback_control_update( dt2    : DTYPE_FLOAT,
         with interval(-1, None):
             
             if cnvflg == 1:
-				if k_idx > kb and k_idx < ktcon:
-					rntot = rntot + pwo * xmb * 0.001 * dt2
+                if k_idx > kb and k_idx < ktcon:
+                    rntot = rntot + pwo * xmb * 0.001 * dt2
         
         with interval(0, -1):
             if cnvflg == 1:
