@@ -400,5 +400,5 @@ def samfshalcnv_func(data_dict):
                              delqev, delq2, pwo, deltv, delq, qevap, rn,
                              edt, cnvw, cnvwt, cnvc, ud_mf, dt_mf, eta )
 
-    return kcnv, kbot, ktop, q1, t1, u1, v1, rn, cnvw, cnvc, ud_mf, dt_mf
+    return kcnv, kbot, ktop, q1, t1, u1, v1, rn, cnvw, cnvc, ud_mf, dt_mf, qtr
 
