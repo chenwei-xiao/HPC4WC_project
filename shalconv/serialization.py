@@ -75,7 +75,7 @@ def compare_data(exp_data, ref_data):
             wrong.append(key)
             flag = False
         else:
-            print(f"Succefully validate {key}!")
+            print(f"Successfully validate {key}!")
     assert flag, f"Data from exp and ref does not match for field {wrong}"
 
 def read_data(tile, is_in, path = "./data"):

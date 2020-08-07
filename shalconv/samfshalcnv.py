@@ -164,7 +164,8 @@ def samfshalcnv_func(data_dict):
     cnvwt = gt.storage.zeros(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
 
     ### Local storages for 2D arrays (float, tracers), this will contain slices along n-axis ###
-    delebar = gt.storage.zeros(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    shape_2d = (im, ntr)
+    delebar = np.zeros(shape_2d, dtype=DTYPE_FLOAT)
 
     ### Local storages for 3D arrays (float, tracers), this will contain slices along n-axis ###
     shape_3d = (im, km, ntr)
@@ -191,6 +192,12 @@ def samfshalcnv_func(data_dict):
     ctr_slice = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
     ctro_slice = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
     ecko_slice = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    
+    ### PART3 Specific
+    dellae_slice = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
+    
+    ### PART4 Specific
+    delebar_slice = gt.storage.empty(BACKEND, default_origin, shape, dtype=DTYPE_FLOAT)
 
     ### Local Parameters ###
     g = grav
@@ -273,27 +280,29 @@ def samfshalcnv_func(data_dict):
                qrcko, ucko, vcko, dbyo, pwo, dellal, to, qo,
                uo, vo, wu2, buo, drag, cnvwt, qeso, heo, heso, hpbl,
                t1, q1, u1, v1)
-
-    # Tracers loop (THIS GOES AT THE END AND POSSIBLY MERGED WITH OTHER
-    # TRACER LOOPS!) --> better use version below
-    for n in range(2, ntr + 2):
-        kk = n-2
-
-        qtr_slice[...] = qtr[np.newaxis, :, :, n]
-
-        # Initialize tracers. Keep in mind that, qtr slice is for the
-        # n-th tracer, while the other storages are slices representing
-        # the (n-2)-th tracer.
-        init_tracers(cnvflg, k_idx, kmax, ctr_slice, ctro_slice, ecko_slice, qtr_slice)
-        ctr[:, :, kk] = ctr_slice[0, :, :].view(np.ndarray)
-        ctro[:, :, kk] = ctro_slice[0, :, :].view(np.ndarray)
-        ecko[:, :, kk] = ecko_slice[0, :, :].view(np.ndarray)
+               
+    # Tracers Loop
+    for n in range(ntr):
+        
+        kk = n+2
+        
+        qtr_slice[...] = qtr[np.newaxis, :, :, kk]
+        
+        # Initialize tracers. Keep in mind that, qtr slice is for the 
+        # (n+2)-th tracer, while the other storages are slices 
+        # representing the n-th tracer.
+        init_tracers( cnvflg, k_idx, kmax, ctr_slice, ctro_slice, ecko_slice, qtr_slice )
+        
+        ctr[:, :, n] = ctr_slice[0, :, :].view(np.ndarray)
+        ctro[:, :, n] = ctro_slice[0, :, :].view(np.ndarray)
+        ecko[:, :, n] = ecko_slice[0, :, :].view(np.ndarray)
+        
 
     #=======================================PART2=====================================
     #=================================================================================
     ### Search in the PBL for the level of maximum moist static energy to start the ascending parcel.
     stencil_static0(cnvflg, hmax, heo, kb, k_idx, kpbl, kmax, zo, to, qeso, qo, po, uo, vo, heso, pfld)
-
+    
     for n in range(ntr):
         ctro_slice[...] = ctro[np.newaxis, :, :, n]
         stencil_ntrstatic0(cnvflg, k_idx, kmax, ctro_slice)
@@ -386,6 +395,15 @@ def samfshalcnv_func(data_dict):
                      qlko_ktcon, wc, gdx, dtconv, u1, v1, po, to,
                      tauadv, xmb, sigmagfm, garea, scaldfunc, xmbmax,
                      sumx, umean)
+                     
+    # Calculate the tendencies of the state variables (tracers part)             
+    for n in range(ntr):
+        
+        ctro_slice[...] = ctro[np.newaxis, :, :, n]
+        ecko_slice[...] = ecko[np.newaxis, :, :, n]
+        comp_tendencies_tr( g, cnvflg, k_idx, kmax, kb, ktcon, 
+                            dellae_slice, del0, eta, ctro_slice, ecko_slice )
+        dellae[:, :, n] = dellae_slice[0, :, :]
 
     # For the "feedback control", calculate updated values of the state
     # variables by multiplying the cloud base mass flux and the
@@ -399,6 +417,47 @@ def samfshalcnv_func(data_dict):
                              q1, u1, dellau, v1, dellav, del0, rntot,
                              delqev, delq2, pwo, deltv, delq, qevap, rn,
                              edt, cnvw, cnvwt, cnvc, ud_mf, dt_mf, eta )
+                             
+    # Calculate updated values of the state variables (tracers part)                 
+    for n in range(0, ntr):
+        
+        kk = n+2
+        qtr_slice[...] = qtr[np.newaxis, :, :, kk]
+        
+        ctr_slice[...] = ctr[np.newaxis, :, :, n]
+        dellae_slice[...] = dellae[np.newaxis, :, :, n]
+        
+        feedback_control_upd_trr( dt2, g, cnvflg, k_idx, kmax, ktcon,
+                                  delebar_slice, ctr_slice, dellae_slice, 
+                                  xmb, qtr_slice )
+        
+        delebar[:, n] = delebar_slice[0, :, 0]
+        qtr[:, :, kk] = qtr_slice[0, :, :]
+        ctr[:, :, n] = ctr_slice[0, :, :]
+    
+    # Separate detrained cloud water into liquid and ice species as a 
+    # function of temperature only
+    if ncloud > 0:
+        
+        qtr_0 = gt.storage.from_array(qtr[np.newaxis, :, :, 0], BACKEND, default_origin)
+        qtr_1 = gt.storage.from_array(qtr[np.newaxis, :, :, 1], BACKEND, default_origin)
+        
+        separate_detrained_cw( dt2, tcr, tcrf, cnvflg, k_idx, kbcon,
+                               ktcon, dellal, xmb, t1, qtr_1, qtr_0 )
+                               
+        qtr[:, :, 0] = qtr_0[0, :, :]
+        qtr[:, :, 1] = qtr_1[0, :, :]
+    
+    # Include TKE contribution from shallow convection
+    if ntk > 0:
+        
+        qtr_ntk = gt.storage.from_array(qtr[np.newaxis, :, :, ntk - 1], BACKEND, default_origin)
+        
+        tke_contribution( betaw, cnvflg, k_idx, kb, ktop,
+                          eta, xmb, pfld, t1, sigmagfm, qtr_ntk )
+                          
+        qtr[:, :, ntk - 1] = qtr_ntk[0, :, :]
+        
 
     return kcnv, kbot, ktop, q1, t1, u1, v1, rn, cnvw, cnvc, ud_mf, dt_mf, qtr
 

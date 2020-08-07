@@ -161,8 +161,8 @@ def stencil_ntrstatic0(
      kmax: FIELD_INT,
      ctro: FIELD_FLOAT
  ):
-     with computation(FORWARD), interval(0,-1):
-         if (cnvflg == 1 )and (k_idx <= (kmax-1)):
+     with computation(PARALLEL), interval(0,-1):
+         if (cnvflg == 1 ) and (k_idx <= (kmax-1)):
              ctro = .5 * (ctro + ctro[0,0,1])
 
 

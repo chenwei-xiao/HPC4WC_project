@@ -105,6 +105,7 @@ def init_kbm_kmax(km        : DTYPE_INT,
                   tx1       : FIELD_FLOAT,
                   ps        : FIELD_FLOAT,
                   prsl      : FIELD_FLOAT):
+					  
     with computation(FORWARD):
         # Determine maximum indices for the parcel starting point (kbm)
         # and cloud top (kmax)
@@ -193,6 +194,7 @@ def init_final( km    : DTYPE_INT,
                 q1    : FIELD_FLOAT,
                 u1    : FIELD_FLOAT,
                 v1    : FIELD_FLOAT ):
+					
     with computation(PARALLEL), interval(...):
         # Calculate hydrostatic height at layer centers assuming a flat 
         # surface (no terrain) from the geopotential
