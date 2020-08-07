@@ -428,8 +428,8 @@ def samfshalcnv_func(data_dict):
         dellae_slice[...] = dellae[np.newaxis, :, :, n]
         
         feedback_control_upd_trr( dt2, g, cnvflg, k_idx, kmax, ktcon,
-                                  delebar_slice, ctr_slice, dellae_slice, 
-                                  xmb, qtr_slice )
+                                  del0, delebar_slice, ctr_slice, 
+                                  dellae_slice, xmb, qtr_slice )
         
         delebar[:, n] = delebar_slice[0, :, 0]
         qtr[:, :, kk] = qtr_slice[0, :, :]

@@ -762,8 +762,7 @@ def feedback_control_upd_trr( dt2    : DTYPE_FLOAT,
                               ctr    : FIELD_FLOAT,
                               dellae : FIELD_FLOAT,
                               xmb    : FIELD_FLOAT,
-                              qtr    : FIELD_FLOAT,
-                              kcon   : FIELD_FLOAT):
+                              qtr    : FIELD_FLOAT ):
     
     with computation(PARALLEL), interval(...):
         delebar = 0.0
@@ -791,7 +790,7 @@ def feedback_control_upd_trr( dt2    : DTYPE_FLOAT,
                 
                 dp = 1000.0 * del0
                 
-                if k_idx <= kmax and k_idx <= kcon:
+                if k_idx <= kmax and k_idx <= ktcon:
                     delebar = delebar[0, 0, -1] + dellae * xmb * dp/g
                 else:
                     delebar = delebar[0, 0, -1] + dellae * xmb * dp/g
