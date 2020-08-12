@@ -289,7 +289,7 @@ def samfshalcnv_part1(data_dict):
             "ktconn":ktconn, "pwo":pwo, "qlko_ktcon":qlko_ktcon, "qrcko":qrcko,
             "xmbmax":xmbmax,
             "u1":u1, "v1":v1, "gdx":gdx, "garea":garea, "dtconv":dtconv, "delp":delp,
-            "cnvc":cnvc, "cnvw":cnvw}
+            "cnvc":cnvc, "cnvw":cnvw, "t1":t1}
 
 def test_part1_ser():
     data_dict = read_data(0, True, path = DATAPATH)
@@ -308,6 +308,7 @@ def test_part1_ser():
     ref_data["delp"] = out_dict_p3["delp"].view(np.ndarray)
     ref_data["cnvc"] = out_dict_p4["cnvc"].view(np.ndarray)
     ref_data["cnvw"] = out_dict_p4["cnvw"].view(np.ndarray)
+    ref_data["t1"] = out_dict_p4["t1"].view(np.ndarray)
     #ref_data = view_gt4pystorage({"heo":out_dict_p2["heo"], "heso":out_dict_p2["heso"],
     #                              "qo":out_dict_p2["qo"], "qeso":out_dict_p2["qeso"],
     #                              "km":out_dict_p2["km"], "kbm":out_dict_p2["kbm"],

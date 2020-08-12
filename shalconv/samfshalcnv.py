@@ -56,7 +56,7 @@ def samfshalcnv_func(data_dict):
     hpbl = data_dict["hpbl"]
     dot = data_dict["dot"]
     phil = data_dict["phil"]
-    fscav = data_dict["fscav"]
+    #fscav = data_dict["fscav"]
 
     ### Output buffers ###
     kcnv = data_dict["kcnv"]
