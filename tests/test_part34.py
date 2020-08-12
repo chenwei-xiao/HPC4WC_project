@@ -88,14 +88,14 @@ def samfshalcnv_part3(input_dict, data_dict):
     
     # Calculate the tendencies of the state variables (per unit cloud base 
     # mass flux) and the cloud base mass flux
-    comp_tendencies( g, betaw, dtmin, dt2, dtmax, dxcrt, cnvflg, k_idx,
-                     kmax, kb, ktcon, ktcon1, kbcon1, kbcon, dellah,
-                     dellaq, dellau, dellav, del0, zi, zi_ktcon1,
+    comp_tendencies( cnvflg, k_idx, kmax, kb, ktcon, ktcon1, kbcon1, kbcon,
+                     dellah, dellaq, dellau, dellav, del0, zi, zi_ktcon1,
                      zi_kbcon1, heo, qo, xlamue, xlamud, eta, hcko,
                      qrcko, uo, ucko, vo, vcko, qcko, dellal, 
                      qlko_ktcon, wc, gdx, dtconv, u1, v1, po, to, 
                      tauadv, xmb, sigmagfm, garea, scaldfunc, xmbmax,
-                     sumx, umean)
+                     sumx, umean,
+                     g=g, betaw=betaw, dtmin=dtmin, dt2=dt2, dtmax=dtmax, dxcrt=dxcrt)
                      
     return dellah, dellaq, dellau, dellav, dellal, xmb, sigmagfm
 
@@ -168,14 +168,15 @@ def samfshalcnv_part4(input_dict, data_dict):
     # variables by multiplying the cloud base mass flux and the 
     # tendencies calculated per unit cloud base mass flux from the 
     # static control
-    feedback_control_update( dt2, g, evfact, evfactl, el2orc, elocp, 
-                             cnvflg, k_idx, kmax, kb, ktcon, flg, 
-                             islimsk, ktop, kbot, kbcon, kcnv, qeso, 
-                             pfld, delhbar, delqbar, deltbar, delubar, 
-                             delvbar, qcond, dellah, dellaq, t1, xmb, 
-                             q1, u1, dellau, v1, dellav, del0, rntot, 
-                             delqev, delq2, pwo, deltv, delq, qevap, rn, 
-                             edt, cnvw, cnvwt, cnvc, ud_mf, dt_mf, eta )
+    feedback_control_update( cnvflg, k_idx, kmax, kb, ktcon, flg,
+                             islimsk, ktop, kbot, kbcon, kcnv, qeso,
+                             pfld, delhbar, delqbar, deltbar, delubar,
+                             delvbar, qcond, dellah, dellaq, t1, xmb,
+                             q1, u1, dellau, v1, dellav, del0, rntot,
+                             delqev, delq2, pwo, deltv, delq, qevap, rn,
+                             edt, cnvw, cnvwt, cnvc, ud_mf, dt_mf, eta,
+                             dt2=dt2, g=g, evfact=evfact, evfactl=evfactl,
+                             el2orc=el2orc, elocp=elocp)
                      
     return kcnv, kbot, ktop, q1, t1, u1, v1, rn, cnvw, cnvc, ud_mf, dt_mf
 

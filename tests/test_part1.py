@@ -56,7 +56,7 @@ def samfshalcnv_part1(data_dict):
     hpbl       = data_dict["hpbl"]
     dot        = data_dict["dot"]
     phil       = data_dict["phil"]
-    fscav      = data_dict["fscav"]
+    #fscav      = data_dict["fscav"]
     
     ### Output buffers ###
     kcnv       = data_dict["kcnv"]
@@ -229,16 +229,16 @@ def samfshalcnv_part1(data_dict):
     
     # Initialize column-integrated and other single-value-per-column 
     # variable arrays
-    init_col_arr( km, kcnv, cnvflg, kbot, ktop,
-                  kbcon, kb, rn, gdx, garea)
+    init_col_arr( kcnv, cnvflg, kbot, ktop,
+                  kbcon, kb, rn, gdx, garea, km=km)
     
     # Return to the calling routine if deep convection is present or the 
     # surface buoyancy flux is negative
     if exit_routine(cnvflg, im): return
     
     # Initialize further parameters and arrays
-    init_par_and_arr( c0s, asolfac, d0, islimsk, c0,
-                      t1, c0t, cnvw, cnvc, ud_mf, dt_mf)
+    init_par_and_arr( islimsk, c0, t1, c0t, cnvw, cnvc, ud_mf, dt_mf,
+                      c0s=c0s, asolfac=asolfac, d0=d0)
                       
     dt2   = delt
     
@@ -256,12 +256,12 @@ def samfshalcnv_part1(data_dict):
     w4s     = -2.0e-5
     
     # Initialize the rest
-    init_kbm_kmax(km, kbm, k_idx, kmax, state_buf1, state_buf2, tx1, ps, prsl)
-    init_final( km, kbm, k_idx, kmax, flg, cnvflg, kpbl, tx1, 
+    init_kbm_kmax(kbm, k_idx, kmax, state_buf1, state_buf2, tx1, ps, prsl, km=km)
+    init_final( kbm, k_idx, kmax, flg, cnvflg, kpbl, tx1,
                 ps, prsl, zo, phil, zi, pfld, eta, hcko, qcko, 
                 qrcko, ucko, vcko, dbyo, pwo, dellal, to, qo, 
                 uo, vo, wu2, buo, drag, cnvwt, qeso, heo, heso, hpbl,
-                t1, q1, u1, v1)
+                t1, q1, u1, v1, km=km)
                 
     
     # Tracers loop (THIS GOES AT THE END AND POSSIBLY MERGED WITH OTHER 

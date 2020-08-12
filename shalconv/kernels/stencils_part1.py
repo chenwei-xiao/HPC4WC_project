@@ -18,7 +18,7 @@ def pa_to_cb( psp  : FIELD_FLOAT,
               delp : FIELD_FLOAT,
               ps   : FIELD_FLOAT,
               prsl : FIELD_FLOAT,
-              del0  : FIELD_FLOAT ):
+              del0  : FIELD_FLOAT):
 
     with computation(PARALLEL), interval(...):
         
@@ -29,8 +29,7 @@ def pa_to_cb( psp  : FIELD_FLOAT,
         
 
 @gtscript.stencil(backend=BACKEND, rebuild=REBUILD)
-def init_col_arr( km    : DTYPE_INT,
-                  kcnv  : FIELD_INT, 
+def init_col_arr( kcnv  : FIELD_INT,
                   cnvflg: FIELD_INT,
                   kbot  : FIELD_INT,
                   ktop  : FIELD_INT,
@@ -38,7 +37,9 @@ def init_col_arr( km    : DTYPE_INT,
                   kb    : FIELD_INT,
                   rn    : FIELD_FLOAT,
                   gdx   : FIELD_FLOAT,
-                  garea : FIELD_FLOAT ):
+                  garea : FIELD_FLOAT,
+                  *,
+                  km    : DTYPE_INT):
     
     with computation(PARALLEL), interval(...):
         
@@ -58,17 +59,18 @@ def init_col_arr( km    : DTYPE_INT,
 
 
 @gtscript.stencil(backend=BACKEND, rebuild=REBUILD)
-def init_par_and_arr( c0s    : DTYPE_FLOAT,
-                      asolfac: DTYPE_FLOAT,
-                      d0     : DTYPE_FLOAT,
-                      islimsk: FIELD_INT,
+def init_par_and_arr( islimsk: FIELD_INT,
                       c0     : FIELD_FLOAT,
                       t1     : FIELD_FLOAT,
                       c0t    : FIELD_FLOAT,
                       cnvw   : FIELD_FLOAT,
                       cnvc   : FIELD_FLOAT,
                       ud_mf  : FIELD_FLOAT,
-                      dt_mf  : FIELD_FLOAT ):
+                      dt_mf  : FIELD_FLOAT,
+                      *,
+                      c0s    : DTYPE_FLOAT,
+                      asolfac: DTYPE_FLOAT,
+                      d0     : DTYPE_FLOAT):
     
     with computation(PARALLEL), interval(...):
         
@@ -96,15 +98,16 @@ def init_par_and_arr( c0s    : DTYPE_FLOAT,
         dt_mf = 0.0
 
 @gtscript.stencil(backend=BACKEND, rebuild=REBUILD, externals={"min": min, "max": max})
-def init_kbm_kmax(km        : DTYPE_INT,
-                  kbm       : FIELD_INT,
+def init_kbm_kmax(kbm       : FIELD_INT,
                   k_idx     : FIELD_INT,
                   kmax      : FIELD_INT,
                   state_buf1: FIELD_INT,
                   state_buf2: FIELD_INT,
                   tx1       : FIELD_FLOAT,
                   ps        : FIELD_FLOAT,
-                  prsl      : FIELD_FLOAT):
+                  prsl      : FIELD_FLOAT,
+                  *,
+                  km        : DTYPE_INT):
 					  
     with computation(FORWARD):
         # Determine maximum indices for the parcel starting point (kbm)
@@ -155,8 +158,7 @@ def init_kbm_kmax(km        : DTYPE_INT,
             kbm = min(kbm, kmax)
 
 @gtscript.stencil(backend=BACKEND, rebuild=REBUILD, externals={"min": min, "max": max, "fpvs": fpvs})
-def init_final( km    : DTYPE_INT,
-                kbm   : FIELD_INT,
+def init_final( kbm   : FIELD_INT,
                 k_idx : FIELD_INT,
                 kmax  : FIELD_INT,
                 flg   : FIELD_INT,
@@ -193,7 +195,9 @@ def init_final( km    : DTYPE_INT,
                 t1    : FIELD_FLOAT,
                 q1    : FIELD_FLOAT,
                 u1    : FIELD_FLOAT,
-                v1    : FIELD_FLOAT ):
+                v1    : FIELD_FLOAT,
+                *,
+                km    : DTYPE_INT):
 					
     with computation(PARALLEL), interval(...):
         # Calculate hydrostatic height at layer centers assuming a flat 

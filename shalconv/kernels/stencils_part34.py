@@ -19,13 +19,7 @@ from .utils import *
 from . import *
 
 @gtscript.stencil(backend=BACKEND, rebuild=REBUILD, externals={"min": min, "max": max, "sqrt": sqrt})
-def comp_tendencies( g         : DTYPE_FLOAT,
-                     betaw     : DTYPE_FLOAT,
-                     dtmin     : DTYPE_FLOAT,
-                     dt2       : DTYPE_FLOAT,
-                     dtmax     : DTYPE_FLOAT,
-                     dxcrt     : DTYPE_FLOAT,
-                     cnvflg    : FIELD_INT,
+def comp_tendencies( cnvflg    : FIELD_INT,
                      k_idx     : FIELD_INT,
                      kmax      : FIELD_INT,
                      kb        : FIELD_INT,
@@ -69,7 +63,14 @@ def comp_tendencies( g         : DTYPE_FLOAT,
                      scaldfunc : FIELD_FLOAT,
                      xmbmax    : FIELD_FLOAT,
                      sumx      : FIELD_FLOAT,
-                     umean     : FIELD_FLOAT):
+                     umean     : FIELD_FLOAT,
+                     *,
+                     g         : DTYPE_FLOAT,
+                     betaw     : DTYPE_FLOAT,
+                     dtmin     : DTYPE_FLOAT,
+                     dt2       : DTYPE_FLOAT,
+                     dtmax     : DTYPE_FLOAT,
+                     dxcrt     : DTYPE_FLOAT):
     
     # Calculate the change in moist static energy, moisture 
     # mixing ratio, and horizontal winds per unit cloud base mass 
@@ -336,8 +337,7 @@ def comp_tendencies( g         : DTYPE_FLOAT,
 
 
 @gtscript.stencil(backend=BACKEND, rebuild=REBUILD)
-def comp_tendencies_tr( g      : DTYPE_FLOAT,
-                        cnvflg : FIELD_INT,
+def comp_tendencies_tr( cnvflg : FIELD_INT,
                         k_idx  : FIELD_INT,
                         kmax   : FIELD_INT,
                         kb     : FIELD_INT,
@@ -346,7 +346,9 @@ def comp_tendencies_tr( g      : DTYPE_FLOAT,
                         del0   : FIELD_FLOAT,
                         eta    : FIELD_FLOAT,
                         ctro   : FIELD_FLOAT,
-                        ecko   : FIELD_FLOAT):
+                        ecko   : FIELD_FLOAT,
+                        *,
+                        g      : DTYPE_FLOAT):
 
     with computation(PARALLEL), interval(...):
         
@@ -381,13 +383,7 @@ def comp_tendencies_tr( g      : DTYPE_FLOAT,
             
 
 @gtscript.stencil(backend=BACKEND, rebuild=REBUILD, externals={"fpvs": fpvs, "min": min, "max": max, "exp": exp, "sqrt": sqrt})
-def feedback_control_update( dt2    : DTYPE_FLOAT,
-                             g      : DTYPE_FLOAT,
-                             evfact : DTYPE_FLOAT,
-                             evfactl: DTYPE_FLOAT,
-                             el2orc : DTYPE_FLOAT,
-                             elocp  : DTYPE_FLOAT,
-                             cnvflg : FIELD_INT,
+def feedback_control_update( cnvflg : FIELD_INT,
                              k_idx  : FIELD_INT,
                              kmax   : FIELD_INT,
                              kb     : FIELD_INT,
@@ -430,7 +426,14 @@ def feedback_control_update( dt2    : DTYPE_FLOAT,
                              cnvc   : FIELD_FLOAT,
                              ud_mf  : FIELD_FLOAT,
                              dt_mf  : FIELD_FLOAT,
-                             eta    : FIELD_FLOAT ):
+                             eta    : FIELD_FLOAT,
+                             *,
+                             dt2    : DTYPE_FLOAT,
+                             g      : DTYPE_FLOAT,
+                             evfact : DTYPE_FLOAT,
+                             evfactl: DTYPE_FLOAT,
+                             el2orc : DTYPE_FLOAT,
+                             elocp  : DTYPE_FLOAT):
     
     with computation(PARALLEL), interval(...):
         
@@ -751,9 +754,7 @@ def feedback_control_update( dt2    : DTYPE_FLOAT,
                 
 
 @gtscript.stencil(backend=BACKEND, rebuild=REBUILD)
-def feedback_control_upd_trr( dt2    : DTYPE_FLOAT,
-                              g      : DTYPE_FLOAT,
-                              cnvflg : FIELD_INT,
+def feedback_control_upd_trr( cnvflg : FIELD_INT,
                               k_idx  : FIELD_INT,
                               kmax   : FIELD_INT,
                               ktcon  : FIELD_INT,
@@ -762,7 +763,10 @@ def feedback_control_upd_trr( dt2    : DTYPE_FLOAT,
                               ctr    : FIELD_FLOAT,
                               dellae : FIELD_FLOAT,
                               xmb    : FIELD_FLOAT,
-                              qtr    : FIELD_FLOAT ):
+                              qtr    : FIELD_FLOAT,
+                              *,
+                              dt2    : DTYPE_FLOAT,
+                              g      : DTYPE_FLOAT):
     
     with computation(PARALLEL), interval(...):
         delebar = 0.0
@@ -818,10 +822,7 @@ def store_aero_conc( cnvflg: FIELD_INT,
             
 
 @gtscript.stencil(backend=BACKEND, rebuild=REBUILD, externals={"max": max, "min": min})
-def separate_detrained_cw( dt2   : DTYPE_FLOAT,
-                           tcr   : DTYPE_FLOAT,
-                           tcrf  : DTYPE_FLOAT,
-                           cnvflg: FIELD_INT,
+def separate_detrained_cw( cnvflg: FIELD_INT,
                            k_idx : FIELD_INT,
                            kbcon : FIELD_INT,
                            ktcon : FIELD_INT,
@@ -829,7 +830,11 @@ def separate_detrained_cw( dt2   : DTYPE_FLOAT,
                            xmb   : FIELD_FLOAT,
                            t1    : FIELD_FLOAT,
                            qtr_1 : FIELD_FLOAT,
-                           qtr_0 : FIELD_FLOAT ):
+                           qtr_0 : FIELD_FLOAT,
+                           *,
+                           dt2   : DTYPE_FLOAT,
+                           tcr   : DTYPE_FLOAT,
+                           tcrf  : DTYPE_FLOAT):
     
     with computation(PARALLEL), interval(...):
         
@@ -856,8 +861,7 @@ def separate_detrained_cw( dt2   : DTYPE_FLOAT,
                 
 
 @gtscript.stencil(backend=BACKEND, rebuild=REBUILD, externals={"max": max})
-def tke_contribution( betaw   : DTYPE_FLOAT,
-                      cnvflg  : FIELD_INT,
+def tke_contribution( cnvflg  : FIELD_INT,
                       k_idx   : FIELD_INT,
                       kb      : FIELD_INT,
                       ktop    : FIELD_INT,
@@ -866,7 +870,9 @@ def tke_contribution( betaw   : DTYPE_FLOAT,
                       pfld    : FIELD_FLOAT,
                       t1      : FIELD_FLOAT, 
                       sigmagfm: FIELD_FLOAT,
-                      qtr_ntk : FIELD_FLOAT ):
+                      qtr_ntk : FIELD_FLOAT,
+                      *,
+                      betaw   : DTYPE_FLOAT):
     
     with computation(PARALLEL), interval(1, -1):
         

@@ -26,3 +26,4 @@
 21. Solve interval problem for stencil_part34.py line 182
 22. notice argument position!
 23. notice bound for forward-backward propagation
+24. scalar have to be *keyword argument* in stencils (raise error in x86/cuda backends)

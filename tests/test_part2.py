@@ -60,10 +60,10 @@ def samfshalcnv_part2(ix,km,clam,pgcon,delt,c1,ncloud,ntk,ntr,
     if(ntk > 0):
         qtr_ntk = gt.storage.from_array(qtr[np.newaxis, :, :, ntk-1], BACKEND, default_origin)
         stencil_static3(sumx, tkemean, cnvflg, k_idx, kb, kbcon, zo, qtr_ntk,
-                         clamt, clam)
+                         clamt, clam=clam)
     #    qtr[:,:,ntr] = qtr_ntr.view(np.ndarray)[0,:,:]
     #else:
-    #stencil_static4(cnvflg, clamt, clam )
+    #stencil_static4(cnvflg, clamt, clam=clam )
     
     ### assume updraft entrainment rate is an inverse function of height
     stencil_static5(cnvflg, xlamue, clamt, zi, xlamud, k_idx, kbcon, kb,
@@ -79,7 +79,7 @@ def samfshalcnv_part2(ix,km,clam,pgcon,delt,c1,ncloud,ntk,ntr,
 
 
     stencil_static7(cnvflg, k_idx, kb, kmax, zi, xlamue, xlamud, hcko, heo, dbyo,
-                     heso, pgcon, ucko, uo, vcko, vo)
+                     heso, ucko, uo, vcko, vo, pgcon=pgcon)
 
     for n in range(ntr):
         ctro_slice[...] = ctro[np.newaxis, :, :, n]
@@ -101,15 +101,16 @@ def samfshalcnv_part2(ix,km,clam,pgcon,delt,c1,ncloud,ntk,ntr,
 
     dt2 = delt
     stencil_static11(flg, cnvflg, ktcon, kbm, kbcon1, dbyo, kbcon, del0, xmbmax,
-                     dt2, aa1, kb, qcko, qo, qrcko, zi, qeso, to, xlamue,
-                     xlamud, eta, c0t, c1, dellal, buo, drag, zo, k_idx, pwo,
-                     cnvwt, ncloud)
+                     aa1, kb, qcko, qo, qrcko, zi, qeso, to, xlamue,
+                     xlamud, eta, c0t, dellal, buo, drag, zo, k_idx, pwo,
+                     cnvwt, c1=c1, dt2=dt2, ncloud=ncloud)
     
     if exit_routine(cnvflg, ix): return
 
     stencil_static12(cnvflg, aa1, flg, ktcon1, kbm, k_idx, ktcon, zo, qeso, 
                      to, dbyo, zi, xlamue, xlamud, qcko, qrcko, qo, eta, del0,
-                     c0t, c1, pwo, cnvwt, buo, wu2, wc, sumx, kbcon1, drag, dellal, ncloud)
+                     c0t, pwo, cnvwt, buo, wu2, wc, sumx, kbcon1, drag, dellal,
+                     c1=c1, ncloud=ncloud)
 
     
     #if(ncloud > 0):

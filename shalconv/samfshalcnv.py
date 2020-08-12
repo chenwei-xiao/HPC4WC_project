@@ -247,16 +247,15 @@ def samfshalcnv_func(data_dict):
 
     # Initialize column-integrated and other single-value-per-column
     # variable arrays
-    init_col_arr(km, kcnv, cnvflg, kbot, ktop,
-                 kbcon, kb, rn, gdx, garea)
+    init_col_arr(kcnv, cnvflg, kbot, ktop, kbcon, kb, rn, gdx, garea, km=km)
 
     # Return to the calling routine if deep convection is present or the
     # surface buoyancy flux is negative
     if exit_routine(cnvflg, im): return
 
     # Initialize further parameters and arrays
-    init_par_and_arr(c0s, asolfac, d0, islimsk, c0,
-                     t1, c0t, cnvw, cnvc, ud_mf, dt_mf)
+    init_par_and_arr( islimsk, c0, t1, c0t, cnvw, cnvc, ud_mf, dt_mf,
+                      c0s=c0s, asolfac=asolfac, d0=d0)
 
     dt2 = delt
 
@@ -274,12 +273,12 @@ def samfshalcnv_func(data_dict):
     w4s = -2.0e-5
 
     # Initialize the rest
-    init_kbm_kmax(km, kbm, k_idx, kmax, state_buf1, state_buf2, tx1, ps, prsl)
-    init_final(km, kbm, k_idx, kmax, flg, cnvflg, kpbl, tx1,
-               ps, prsl, zo, phil, zi, pfld, eta, hcko, qcko,
-               qrcko, ucko, vcko, dbyo, pwo, dellal, to, qo,
-               uo, vo, wu2, buo, drag, cnvwt, qeso, heo, heso, hpbl,
-               t1, q1, u1, v1)
+    init_kbm_kmax(kbm, k_idx, kmax, state_buf1, state_buf2, tx1, ps, prsl, km=km)
+    init_final( kbm, k_idx, kmax, flg, cnvflg, kpbl, tx1,
+                ps, prsl, zo, phil, zi, pfld, eta, hcko, qcko,
+                qrcko, ucko, vcko, dbyo, pwo, dellal, to, qo,
+                uo, vo, wu2, buo, drag, cnvwt, qeso, heo, heso, hpbl,
+                t1, q1, u1, v1, km=km)
                
     # Tracers Loop
     for n in range(ntr):
@@ -328,10 +327,10 @@ def samfshalcnv_func(data_dict):
     if (ntk > 0):
         qtr_ntk = gt.storage.from_array(qtr[np.newaxis, :, :, ntk - 1], BACKEND, default_origin)
         stencil_static3(sumx, tkemean, cnvflg, k_idx, kb, kbcon, zo, qtr_ntk,
-                        clamt, clam)
+                        clamt, clam=clam)
     #    qtr[:,:,ntr] = qtr_ntr.view(np.ndarray)[0,:,:]
     # else:
-    # stencil_static4(cnvflg, clamt, clam )
+    # stencil_static4(cnvflg, clamt, clam=clam )
 
     ### assume updraft entrainment rate is an inverse function of height
     stencil_static5(cnvflg, xlamue, clamt, zi, xlamud, k_idx, kbcon, kb,
@@ -346,7 +345,7 @@ def samfshalcnv_func(data_dict):
         ecko[:, :, n] = ecko_slice[0, :, :]
 
     stencil_static7(cnvflg, k_idx, kb, kmax, zi, xlamue, xlamud, hcko, heo, dbyo,
-                    heso, pgcon, ucko, uo, vcko, vo)
+                    heso, ucko, uo, vcko, vo, pgcon=pgcon)
 
     for n in range(ntr):
         ctro_slice[...] = ctro[np.newaxis, :, :, n]
@@ -368,18 +367,19 @@ def samfshalcnv_func(data_dict):
 
     dt2 = delt
     stencil_static11(flg, cnvflg, ktcon, kbm, kbcon1, dbyo, kbcon, del0, xmbmax,
-                     dt2, aa1, kb, qcko, qo, qrcko, zi, qeso, to, xlamue,
-                     xlamud, eta, c0t, c1, dellal, buo, drag, zo, k_idx, pwo,
-                     cnvwt, ncloud)
+                     aa1, kb, qcko, qo, qrcko, zi, qeso, to, xlamue,
+                     xlamud, eta, c0t, dellal, buo, drag, zo, k_idx, pwo,
+                     cnvwt, c1=c1, dt2=dt2, ncloud=ncloud)
 
     if exit_routine(cnvflg, ix): return
 
     stencil_static12(cnvflg, aa1, flg, ktcon1, kbm, k_idx, ktcon, zo, qeso,
                      to, dbyo, zi, xlamue, xlamud, qcko, qrcko, qo, eta, del0,
-                     c0t, c1, pwo, cnvwt, buo, wu2, wc, sumx, kbcon1, drag, dellal, ncloud)
+                     c0t, pwo, cnvwt, buo, wu2, wc, sumx, kbcon1, drag, dellal,
+                     c1=c1, ncloud=ncloud)
 
     if(ncloud > 0):
-	    stencil_static13(cnvflg, k_idx, ktcon, qeso, to, dbyo, qcko, qlko_ktcon)
+        stencil_static13(cnvflg, k_idx, ktcon, qeso, to, dbyo, qcko, qlko_ktcon)
     
     stencil_static14(cnvflg, vshear, k_idx, kb, ktcon, uo, vo, zi, edt)
 
@@ -387,36 +387,37 @@ def samfshalcnv_func(data_dict):
     #=================================================================================
     # Calculate the tendencies of the state variables (per unit cloud base
     # mass flux) and the cloud base mass flux
-    comp_tendencies( g, betaw, dtmin, dt2, dtmax, dxcrt, cnvflg, k_idx,
-                     kmax, kb, ktcon, ktcon1, kbcon1, kbcon, dellah,
-                     dellaq, dellau, dellav, del0, zi, zi_ktcon1,
+    comp_tendencies( cnvflg, k_idx, kmax, kb, ktcon, ktcon1, kbcon1, kbcon,
+                     dellah, dellaq, dellau, dellav, del0, zi, zi_ktcon1,
                      zi_kbcon1, heo, qo, xlamue, xlamud, eta, hcko,
                      qrcko, uo, ucko, vo, vcko, qcko, dellal,
                      qlko_ktcon, wc, gdx, dtconv, u1, v1, po, to,
                      tauadv, xmb, sigmagfm, garea, scaldfunc, xmbmax,
-                     sumx, umean)
+                     sumx, umean,
+                     g=g, betaw=betaw, dtmin=dtmin, dt2=dt2, dtmax=dtmax, dxcrt=dxcrt)
                      
     # Calculate the tendencies of the state variables (tracers part)             
     for n in range(ntr):
         
         ctro_slice[...] = ctro[np.newaxis, :, :, n]
         ecko_slice[...] = ecko[np.newaxis, :, :, n]
-        comp_tendencies_tr( g, cnvflg, k_idx, kmax, kb, ktcon, 
-                            dellae_slice, del0, eta, ctro_slice, ecko_slice )
+        comp_tendencies_tr( cnvflg, k_idx, kmax, kb, ktcon,
+                            dellae_slice, del0, eta, ctro_slice, ecko_slice, g=g )
         dellae[:, :, n] = dellae_slice[0, :, :]
 
     # For the "feedback control", calculate updated values of the state
     # variables by multiplying the cloud base mass flux and the
     # tendencies calculated per unit cloud base mass flux from the
     # static control
-    feedback_control_update( dt2, g, evfact, evfactl, el2orc, elocp,
-                             cnvflg, k_idx, kmax, kb, ktcon, flg,
+    feedback_control_update( cnvflg, k_idx, kmax, kb, ktcon, flg,
                              islimsk, ktop, kbot, kbcon, kcnv, qeso,
                              pfld, delhbar, delqbar, deltbar, delubar,
                              delvbar, qcond, dellah, dellaq, t1, xmb,
                              q1, u1, dellau, v1, dellav, del0, rntot,
                              delqev, delq2, pwo, deltv, delq, qevap, rn,
-                             edt, cnvw, cnvwt, cnvc, ud_mf, dt_mf, eta )
+                             edt, cnvw, cnvwt, cnvc, ud_mf, dt_mf, eta,
+                             dt2=dt2, g=g, evfact=evfact, evfactl=evfactl,
+                             el2orc=el2orc, elocp=elocp)
                              
     # Calculate updated values of the state variables (tracers part)                 
     for n in range(0, ntr):
@@ -427,9 +428,10 @@ def samfshalcnv_func(data_dict):
         ctr_slice[...] = ctr[np.newaxis, :, :, n]
         dellae_slice[...] = dellae[np.newaxis, :, :, n]
         
-        feedback_control_upd_trr( dt2, g, cnvflg, k_idx, kmax, ktcon,
+        feedback_control_upd_trr( cnvflg, k_idx, kmax, ktcon,
                                   del0, delebar_slice, ctr_slice, 
-                                  dellae_slice, xmb, qtr_slice )
+                                  dellae_slice, xmb, qtr_slice,
+                                  dt2=dt2, g=g)
         
         delebar[:, n] = delebar_slice[0, :, 0]
         qtr[:, :, kk] = qtr_slice[0, :, :]
@@ -442,8 +444,9 @@ def samfshalcnv_func(data_dict):
         qtr_0 = gt.storage.from_array(qtr[np.newaxis, :, :, 0], BACKEND, default_origin)
         qtr_1 = gt.storage.from_array(qtr[np.newaxis, :, :, 1], BACKEND, default_origin)
         
-        separate_detrained_cw( dt2, tcr, tcrf, cnvflg, k_idx, kbcon,
-                               ktcon, dellal, xmb, t1, qtr_1, qtr_0 )
+        separate_detrained_cw( cnvflg, k_idx, kbcon,
+                               ktcon, dellal, xmb, t1, qtr_1, qtr_0,
+                               dt2=dt2, tcr=tcr, tcrf=tcrf)
                                
         qtr[:, :, 0] = qtr_0[0, :, :]
         qtr[:, :, 1] = qtr_1[0, :, :]
@@ -453,8 +456,9 @@ def samfshalcnv_func(data_dict):
         
         qtr_ntk = gt.storage.from_array(qtr[np.newaxis, :, :, ntk - 1], BACKEND, default_origin)
         
-        tke_contribution( betaw, cnvflg, k_idx, kb, ktop,
-                          eta, xmb, pfld, t1, sigmagfm, qtr_ntk )
+        tke_contribution( cnvflg, k_idx, kb, ktop,
+                          eta, xmb, pfld, t1, sigmagfm, qtr_ntk,
+                          betaw=betaw)
                           
         qtr[:, :, ntk - 1] = qtr_ntk[0, :, :]
         
