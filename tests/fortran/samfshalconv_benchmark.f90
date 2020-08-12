@@ -54,21 +54,21 @@ module samfshalconv_benchmark
 !
       implicit none
 !
-      integer, intent(in)  :: im, ix,  km, itc, ntc, ntk, ntr, ncloud
-      integer, intent(in)  :: islimsk(im)
-      real(kind=8), intent(in) ::  delt
-      real(kind=8), intent(in) :: psp(im), delp(ix,km), &
+      integer, intent(inout)  :: im, ix,  km, itc, ntc, ntk, ntr, ncloud
+      integer, intent(inout)  :: islimsk(im)
+      real(kind=8), intent(inout) ::  delt
+      real(kind=8), intent(inout) :: psp(im), delp(ix,km), &
      &   prslp(ix,km), garea(im), hpbl(im), dot(ix,km), phil(ix,km)
 !
-      integer, intent(in)  :: kcnv(im)
-      real(kind=8), intent(in) ::   qtr(ix,km,ntr+2), &
+      integer, intent(inout)  :: kcnv(im)
+      real(kind=8), intent(inout) ::   qtr(ix,km,ntr+2), &
      &   q1(ix,km), t1(ix,km), u1(ix,km), v1(ix,km)
 !
-      integer, intent(in) :: kbot(im), ktop(im)
-      real(kind=8), intent(in) :: rn(im), &
+      integer, intent(inout) :: kbot(im), ktop(im)
+      real(kind=8), intent(inout) :: rn(im), &
      &   cnvw(ix,km), cnvc(ix,km), ud_mf(im,km), dt_mf(im,km)
 !
-      real(kind=8), intent(in) :: clam,    c0s,     c1, &
+      real(kind=8), intent(inout) :: clam,    c0s,     c1, &
      &                                    asolfac, pgcon
 !
 !  local variables
