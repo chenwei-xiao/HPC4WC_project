@@ -20,8 +20,8 @@ execute `build.sh` then `enter.sh`.
 3. execute `ipython main.py` or `benchmark.py`
 
 ## Run on Piz Diant
-1. CHANGE `ISDOCKER` and `DATAPATH` in `shalconv/__init__.py`
-2. execute `env_diant`
+1. CHANGE `ISDOCKER` to False and `DATAPATH` in `shalconv/__init__.py`
+2. execute `source env_diant`
 3. execute `ipython main.py` or `benchmark.py`
 
 ## Tests
