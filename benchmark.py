@@ -59,7 +59,7 @@ def samfshalcnv_fort(data_dict):
                  dt_mf = dt_mf, cnvw = cnvw, cnvc = cnvc, clam = clam,
                  c0s = c0s, c1 = c1, pgcon = pgcon, asolfac = asolfac)
 
-def run_model(ncolumns, nrun = 10):
+def run_model(ncolumns, nrun = 10, compile_gt4py = True):
     ser_count_max = 19
     num_tiles = 6
     input_0 = read_data(0, True)
@@ -75,7 +75,7 @@ def run_model(ncolumns, nrun = 10):
         data["im"] = length
         data_gt4py = numpy_dict_to_gt4py_dict(data)
         data_fortran = carray2fortranarray(data)
-        if i == 0: samfshalcnv_func(data_gt4py)
+        if i == 0 and compile_gt4py: samfshalcnv_func(data_gt4py)
         tic = time()
         samfshalcnv_func(data_gt4py)
         toc = time()
@@ -99,7 +99,7 @@ if __name__ == "__main__":
     print(f"Benchmarking samfshalcnv with backend: {BACKEND}")
     for i in range(len(lengths)):
         length = lengths[i]
-        times_gt4py, times_fortran = run_model(length, nrun)
+        times_gt4py, times_fortran = run_model(length, nrun, i==0)
         time_mat_gt4py[:,i] = times_gt4py
         time_mat_fortran[:,i] = times_fortran
         print(f"ix = {length}, Run time: Avg {times_gt4py.mean():.3f}, Std {np.std(times_gt4py):.3e} seconds")
