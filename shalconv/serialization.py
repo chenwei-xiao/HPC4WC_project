@@ -146,11 +146,11 @@ def read_random_input(length, ix, ntile, ncount, path = DATAPATH):
         if key == "fscav":
             output[key] = data
         elif ndim == 1:
-            output[key] = np.zeros((length,), dtype=data.dtype)
+            output[key] = np.zeros((length,), dtype=data.dtype, order='F')
         elif ndim == 2:
-            output[key] = np.zeros((length, data.shape[1]), dtype=data.dtype)
+            output[key] = np.zeros((length, data.shape[1]), dtype=data.dtype, order='F')
         elif ndim == 3:
-            output[key] = np.zeros((length, data.shape[1], data.shape[2]), dtype=data.dtype)
+            output[key] = np.zeros((length, data.shape[1], data.shape[2]), dtype=data.dtype, order='F')
     breaks.append(length)
     breaks.insert(0, 0)
     for key in output:
