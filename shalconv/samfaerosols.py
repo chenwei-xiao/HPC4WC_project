@@ -274,7 +274,6 @@ def samfshalcnv_aerosols(im, ix, km, itc, ntc, ntr, delt,
     totlout = gt.storage.empty(BACKEND, default_origin, shape_2d, dtype = DTYPE_FLOAT)
     clipout = gt.storage.empty(BACKEND, default_origin, shape_2d, dtype = DTYPE_FLOAT)
     ## Misc
-    #kmax_np = kmax[0, :, 0].view(np.ndarray)
     index_ijk_np = np.indices(shape_2d) 
     index_k = gt.storage.from_array(index_ijk_np[2] + 1, BACKEND, default_origin, shape_2d, dtype = int) # index STARTING FROM 1
     dtime_max_arr = gt.storage.empty(BACKEND, default_origin, shape_2d, dtype = DTYPE_FLOAT)
@@ -285,6 +284,7 @@ def samfshalcnv_aerosols(im, ix, km, itc, ntc, ntr, delt,
     if (ntr < itc + ntc - 3): return
 
     calc_dtime_max_arr(delp, ktcon, index_k, dtime_max_arr, delt = delt)
+    dtime_max_arr.synchronize()
     dtime_max = dtime_max_arr[0, :, -1].view(np.ndarray).min()
 
     ## Tracer loop
@@ -323,5 +323,6 @@ def samfshalcnv_aerosols(im, ix, km, itc, ntc, ntr, delt,
 
         calc_final(dellae2, kmax, ktcon, cnvflg, index_k, qaero, delt = delt)
 
+        qaero.synchronize()
         qaero_np[:, :, n] = qaero.view(np.ndarray)[0, :, :]
 

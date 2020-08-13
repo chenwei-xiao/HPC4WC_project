@@ -69,5 +69,6 @@ x_gt = gt4py.storage.from_array(x, backend, (0,0,0), dtype=dtype)
 y_gt = gt4py.storage.from_array(y, backend, (0,0,0), dtype=dtype)
 
 fpvsx_stencil(x_gt, y_gt, domain = shape)
+y_gt.synchronize()
 y[...] = fpvsx(x)
 print(np.allclose(y,y_gt.view(np.ndarray)))

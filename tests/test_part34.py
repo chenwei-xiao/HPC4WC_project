@@ -5,7 +5,7 @@ from gt4py import gtscript
 #sys.path.append("..")
 from tests.read_serialization import read_serialization_part3, read_serialization_part4
 from shalconv.kernels.stencils_part34 import *
-from shalconv.serialization import read_data, compare_data, OUT_VARS, numpy_dict_to_gt4py_dict
+from shalconv.serialization import *
 from shalconv import *
 from shalconv.physcons import (
     con_g     as grav,
@@ -188,10 +188,10 @@ def test_part3():
     out_dict = read_serialization_part4()
     
     dellah, dellaq, dellau, dellav, dellal, xmb, sigmagfm = samfshalcnv_part3(input_dict, data_dict)
-    
-    compare_data({"dellah":dellah.view(np.ndarray),"dellaq":dellaq.view(np.ndarray),
-                  "dellau":dellau.view(np.ndarray),"dellav":dellav.view(np.ndarray),
-                  "dellal":dellal.view(np.ndarray),"xmb":xmb.view(np.ndarray),"sigmagfm":sigmagfm.view(np.ndarray)},
+    exp_data = view_gt4pystorage({"dellah":dellah,"dellaq":dellaq,
+                                  "dellau":dellau,"dellav":dellav,
+                                  "dellal":dellal,"xmb":xmb,"sigmagfm":sigmagfm})
+    compare_data(exp_data,
                  {"dellah":out_dict["dellah"].view(np.ndarray),"dellaq":out_dict["dellaq"].view(np.ndarray),
                   "dellau":out_dict["dellau"].view(np.ndarray),"dellav":out_dict["dellav"].view(np.ndarray),
                   "dellal":out_dict["dellal"].view(np.ndarray),"xmb":out_dict["xmb"].view(np.ndarray),"sigmagfm":out_dict["sigmagfm"].view(np.ndarray)})
@@ -204,25 +204,14 @@ def test_part4():
     data_dict = read_serialization_part4()
     out_dict = read_data(0, False, path = DATAPATH)
     
-    #a_prev = data_dict["cnvc"].view(np.ndarray)[0,:,:].copy()
-    
     kcnv, kbot, ktop, q1, t1, u1, v1, rn, cnvw, cnvc, ud_mf, dt_mf = samfshalcnv_part4(input_dict, data_dict)
+    exp_data = view_gt4pystorage({"kcnv":kcnv[0,:,0],"kbot":kbot[0,:,0],"ktop":ktop[0,:,0],
+                                  "q1":q1[0,:,:],"t1":t1[0,:,:],
+                                  "u1":u1[0,:,:],"v1":v1[0,:,:],"rn":rn[0,:,0],
+                                  "cnvw":cnvw[0,:,:],"cnvc":cnvc[0,:,:],"ud_mf":ud_mf[0,:,:],
+                                  "dt_mf":dt_mf[0,:,:]})
     
-    #a = cnvc.view(np.ndarray)[0,:,:]
-    #b = out_dict["cnvc"]
-    #for i in range(0, 79):
-    #    print(np.allclose(a[:, i], b[:, i], equal_nan=True))
-    #for i in range(0, 2304):
-    #    print(a_prev[i, 13], a[i, 13], b[i, 13], np.allclose(a[i, 13], b[i, 13], equal_nan=True))
-    #print(a)
-    #print(b)
-    #print(np.allclose(a, b, equal_nan=True))
-    
-    compare_data({"kcnv":kcnv.view(np.ndarray)[0,:,0],"kbot":kbot.view(np.ndarray)[0,:,0],"ktop":ktop.view(np.ndarray)[0,:,0],
-                  "q1":q1.view(np.ndarray)[0,:,:],"t1":t1.view(np.ndarray)[0,:,:],
-                  "u1":u1.view(np.ndarray)[0,:,:],"v1":v1.view(np.ndarray)[0,:,:],"rn":rn.view(np.ndarray)[0,:,0],
-                  "cnvw":cnvw.view(np.ndarray)[0,:,:],"cnvc":cnvc.view(np.ndarray)[0,:,:],"ud_mf":ud_mf.view(np.ndarray)[0,:,:],
-                  "dt_mf":dt_mf.view(np.ndarray)[0,:,:]},
+    compare_data(exp_data,
                  {"kcnv":out_dict["kcnv"],"kbot":out_dict["kbot"],"ktop":out_dict["ktop"],
                   "q1":out_dict["q1"],"t1":out_dict["t1"],
                   "u1":out_dict["u1"],"v1":out_dict["v1"],"rn":out_dict["rn"],

@@ -291,7 +291,10 @@ def samfshalcnv_func(data_dict):
         # (n+2)-th tracer, while the other storages are slices 
         # representing the n-th tracer.
         init_tracers( cnvflg, k_idx, kmax, ctr_slice, ctro_slice, ecko_slice, qtr_slice )
-        
+
+        ctr_slice.synchronize()
+        ctro_slice.synchronize()
+        ecko_slice.synchronize()
         ctr[:, :, n] = ctr_slice[0, :, :].view(np.ndarray)
         ctro[:, :, n] = ctro_slice[0, :, :].view(np.ndarray)
         ecko[:, :, n] = ecko_slice[0, :, :].view(np.ndarray)
@@ -328,7 +331,7 @@ def samfshalcnv_func(data_dict):
         qtr_ntk = gt.storage.from_array(qtr[np.newaxis, :, :, ntk - 1], BACKEND, default_origin)
         stencil_static3(sumx, tkemean, cnvflg, k_idx, kb, kbcon, zo, qtr_ntk,
                         clamt, clam=clam)
-    #    qtr[:,:,ntr] = qtr_ntr.view(np.ndarray)[0,:,:]
+    #    qtr[:,:,ntr] = qtr_ntr[0,:,:]
     # else:
     # stencil_static4(cnvflg, clamt, clam=clam )
 
@@ -336,8 +339,6 @@ def samfshalcnv_func(data_dict):
     stencil_static5(cnvflg, xlamue, clamt, zi, xlamud, k_idx, kbcon, kb,
                     eta, ktconn, kmax, kbm, hcko, ucko, vcko, heo, uo, vo)
 
-    # indx = kb[0, :, 0].view(np.ndarray)
-    # ecko[:, indx, :] = ctro[:, indx, :]
     for n in range(ntr):
         ctro_slice[...] = ctro[np.newaxis, :, :, n]
         ecko_slice[...] = ecko[np.newaxis, :, :, n]

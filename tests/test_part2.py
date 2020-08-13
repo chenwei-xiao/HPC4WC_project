@@ -4,7 +4,7 @@ import gt4py as gt
 from tests.read_serialization import *
 from shalconv.kernels.utils import get_1D_from_index, exit_routine
 from shalconv.kernels.stencils_part2 import *
-from shalconv.serialization import read_data, compare_data, OUT_VARS, numpy_dict_to_gt4py_dict
+from shalconv.serialization import *
 from shalconv import *
 from shalconv.physcons import (
     con_g     as grav,
@@ -61,7 +61,7 @@ def samfshalcnv_part2(ix,km,clam,pgcon,delt,c1,ncloud,ntk,ntr,
         qtr_ntk = gt.storage.from_array(qtr[np.newaxis, :, :, ntk-1], BACKEND, default_origin)
         stencil_static3(sumx, tkemean, cnvflg, k_idx, kb, kbcon, zo, qtr_ntk,
                          clamt, clam=clam)
-    #    qtr[:,:,ntr] = qtr_ntr.view(np.ndarray)[0,:,:]
+    #    qtr[:,:,ntr] = qtr_ntr[0,:,:]
     #else:
     #stencil_static4(cnvflg, clamt, clam=clam )
     
@@ -69,8 +69,6 @@ def samfshalcnv_part2(ix,km,clam,pgcon,delt,c1,ncloud,ntk,ntr,
     stencil_static5(cnvflg, xlamue, clamt, zi, xlamud, k_idx, kbcon, kb,
                      eta, ktconn, kmax, kbm, hcko, ucko, vcko, heo, uo, vo)
 
-    #indx = kb[0, :, 0].view(np.ndarray)
-    #ecko[:, indx, :] = ctro[:, indx, :]
     for n in range(ntr):
         ctro_slice[...] = ctro[np.newaxis, :, :, n]
         ecko_slice[...] = ecko[np.newaxis, :, :, n]
@@ -324,13 +322,6 @@ def apply_arguments_stencil012345(input_dict, data_dict):
     stencil_static5(cnvflg, xlamue, clamt, zi, xlamud, k_idx, kbcon, kb,
                     eta, ktconn, kmax, kbm, hcko, ucko, vcko, heo, uo, vo)
     return clamt, xlamud, xlamue, eta, kmax, kbm, hcko, ucko, vcko, tkemean, sumx
-
-def view_gt4pystorage(data_dict):
-    new_data_dict = {}
-    for key in data_dict:
-        data = data_dict[key]
-        new_data_dict[key] = data.view(np.ndarray)
-    return new_data_dict
 
 def test_part2_1():
     input_dict = read_data(0, True, path=DATAPATH)

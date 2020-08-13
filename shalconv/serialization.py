@@ -163,5 +163,6 @@ def view_gt4pystorage(data_dict):
     new_data_dict = {}
     for key in data_dict:
         data = data_dict[key]
+        if not isinstance(data, np.ndarray): data.synchronize()
         new_data_dict[key] = data.view(np.ndarray)
     return new_data_dict

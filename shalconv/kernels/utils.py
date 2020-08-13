@@ -39,6 +39,7 @@ def slice_to_3d(slice):
     
     
 def exit_routine(cnvflg, im):
+    cnvflg.synchronize()
     cnvflg_np = cnvflg[0,:im,0].view(np.ndarray)
     return cnvflg_np.sum() == 0
 
