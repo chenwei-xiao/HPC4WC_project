@@ -14,12 +14,14 @@ tscale = 2.228/np.sqrt(10) # student-t distirbution double side 95% confidence i
 
 capsize=1.0
 plt.figure()
-plt.errorbar(lengths, np_avg, yerr=2*tscale*np_std, capsize=capsize, label="Numpy backend")
 plt.errorbar(lengths, fort_avg, yerr=2*tscale*fort_std, capsize=capsize, label="Original Fortran")
+plt.errorbar(lengths, np_avg, yerr=2*tscale*np_std, capsize=capsize, label="Numpy backend")
 plt.errorbar(lengths, x86_avg, yerr=2*tscale*x86_std, capsize=capsize, label="x86 backend")
 plt.errorbar(lengths[:2], cuda_avg, yerr=2*tscale*cuda_std, capsize=capsize, label="Cuda backend")
-plt.xscale("log")
+plt.xscale("log", basex=2)
 plt.yscale("log")
+plt.xlabel("Number of columns (ix)")
+plt.ylabel("Elapsed time (seconds)")
 plt.legend()
 
 plt.savefig("benchmark.pdf") #dpi=300
