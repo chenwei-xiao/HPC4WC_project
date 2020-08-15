@@ -23,6 +23,7 @@
 - `enter.sh`: script for entering the docker environment
 - `env_daint`: script for setting up environment in Piz Daint
 - `submit_job.sh`: script for submitting SLURM jobs in Piz Daint of benchmarking shalconv scheme with gtcuda and gtx86 backends
+- `get_data.sh`: download serialized data
 - `main.py`: validation for shallow convection scheme
 - `benchmark.py`: benchmark shallow convection scheme with various number of columns (ix)
 - `plot.py`: plot benchmark results (already hardcoded)
@@ -40,14 +41,16 @@ one of `numpy`, `debug`, `gtx86`, `gtcuda`.
 execute `build.sh` then `enter.sh`.
 
 ## Build with docker in Windows
-1. execute `docker build -t hpc4wc_project .`
-2. execute `docker run -i -t --rm --mount type=bind,source={ABSOLUTE PATH OF THIS FOLDER},target=/work --name=hpc4wc_project hpc4wc_project`
-3. execute `ipython main.py` or `benchmark.py`
+1. download serialized data and extract them according to `get_data.sh`
+2. execute `docker build -t hpc4wc_project .`
+3. execute `docker run -i -t --rm --mount type=bind,source={ABSOLUTE PATH OF THIS FOLDER},target=/work --name=hpc4wc_project hpc4wc_project`
+4. execute `ipython main.py` or `benchmark.py`
 
 ## Run on Piz Diant
-1. CHANGE `ISDOCKER` to False and `DATAPATH` in `shalconv/__init__.py`
-2. execute `source env_diant`
-3. execute `ipython main.py` or `benchmark.py`
+1. execute `get_data.sh` to get serialized data
+2. CHANGE `ISDOCKER` to False and `DATAPATH` in `shalconv/__init__.py`
+3. execute `source env_diant`
+4. execute `ipython main.py` or `benchmark.py`
 
 ## Tests
 Inside tests folder, execute `ipython run_serialization.py` to generate serialization

@@ -251,6 +251,8 @@ def init_final( kbm   : FIELD_INT,
         kpbl = min(kpbl, kbm)
 
         # Temporary var have to be defined outside of if-clause
+        val1 = 0.0
+        val2 = 0.0
         tem  = 0.0
         fpvsto = fpvs(t1) #fpvs(to) and to = t1
         

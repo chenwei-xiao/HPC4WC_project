@@ -10,7 +10,7 @@ x86_avg = np.array([0.090, 0.092, 0.103, 0.147, 0.330, 1.216, 5.303])
 x86_std = np.array([7.458e-04, 4.345e-04, 1.491e-03, 5.882e-03, 1.973e-02, 7.084e-02, 6.407e-02])
 cuda_avg = np.array([0.097, 0.147])
 cuda_std = np.array([1.726e-03, 4.610e-02])
-tscale = 2.228/np.sqrt(10) # student-t distirbution double side 95% confidence interval
+tscale = 2.262/np.sqrt(10) # student-t distirbution double side 95% confidence interval
 
 capsize=1.0
 plt.figure()
