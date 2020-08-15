@@ -25,6 +25,9 @@ OUT_VARS = ["kcnv", "kbot", "ktop", "qtr", "q1", "t1", "u1",
             "v1", "rn", "cnvw", "cnvc", "ud_mf", "dt_mf"]
 
 def clean_numpy_dict(data_dict):
+    """
+    Transform array with length 1 into scalar values in data dict
+    """
     for var in data_dict:
         if var in int_vars:
             data_dict[var] = DTYPE_INT(data_dict[var][0])
@@ -32,6 +35,9 @@ def clean_numpy_dict(data_dict):
             data_dict[var] = DTYPE_FLOAT(data_dict[var][0])
 
 def data_dict_from_var_list(var_list, serializer, savepoint):
+    """
+    Read variables from specified savepoint in specified serializer
+    """
     d = {}
     for var in var_list:
         d[var] = serializer.read(var, savepoint)
@@ -78,6 +84,9 @@ def numpy_dict_to_gt4py_dict(data_dict, backend = BACKEND):
     return new_data_dict
     
 def compare_data(exp_data, ref_data):
+    """
+    Compare two dicts of numpy arrays, raise error if one array in `exp_data` does not match the one in `ref_data`
+    """
     wrong = []
     flag  = True
     
@@ -131,6 +140,15 @@ def read_input_x_index(tile, ser_count, indices, path = DATAPATH):
     return data
 
 def read_random_input(length, ix, ntile, ncount, path = DATAPATH):
+    """
+    Generate input data of specified x dimension by randomly selecting columns from serialized data
+    ignore `fscav` because it doesn't have x dimension
+    :param length: number of columns to generate
+    :param ix: original x dimension in the 1 tile and 1 savepoint of serialized data
+    :param ntile: number of tiles in serialized data
+    :param ncount: number of savepoints in serialized data
+    :param path: path to serialized data
+    """
     tile      = np.ndarray((length,), dtype=DTYPE_INT)
     ser_count = np.ndarray((length,), dtype=DTYPE_INT)
     index     = np.ndarray((length,), dtype=DTYPE_INT)
@@ -189,8 +207,10 @@ def read_random_input(length, ix, ntile, ncount, path = DATAPATH):
     return output
 
 def view_gt4pystorage(data_dict):
+    """
+    Cast dict of gt4py storage into dict of numpy arrays
+    """
     new_data_dict = {}
-    
     for key in data_dict:
         data = data_dict[key]
         if not isinstance(data, np.ndarray): data.synchronize()
