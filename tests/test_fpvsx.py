@@ -4,6 +4,8 @@ import gt4py
 import gt4py.gtscript as gtscript
 import gt4py.storage as gt_storage
 from gt4py.gtscript import PARALLEL, computation, interval
+import sys
+sys.path.append("..")
 from shalconv.funcphys import fpvsx, fpvsx_gt
 
 backend="numpy" # "debug", "numpy", "gtx86", "gtcuda"

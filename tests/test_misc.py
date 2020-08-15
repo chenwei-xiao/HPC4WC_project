@@ -1,5 +1,7 @@
 import pytest
 import numpy as np
+import sys
+sys.path.append("..")
 from shalconv.serialization import read_data, compare_data, OUT_VARS
 from shalconv.funcphys import *
 

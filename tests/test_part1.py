@@ -1,10 +1,10 @@
 import pytest
 import gt4py as gt
 from gt4py import gtscript
-#import sys
-#sys.path.append("..")
+import sys
+sys.path.append("..")
 from shalconv.kernels.stencils_part1 import *
-from tests.read_serialization import *
+from read_serialization import *
 from shalconv.serialization import *
 from shalconv import *
 from shalconv.physcons import (

@@ -4,6 +4,9 @@ import gt4py
 import gt4py.gtscript as gtscript
 import gt4py.storage as gt_storage
 from gt4py.gtscript import PARALLEL, computation, interval
+import sys
+sys.path.append("..")
+from shalconv.kernels.utils import exp
 
 
 backend="numpy" # "debug", "numpy", "gtx86", "gtcuda"
@@ -13,7 +16,7 @@ dtype = np.float64
 def f(x):
     return x
 
-@gtscript.stencil(backend=backend, externals={"f":f}) # this decorator triggers compilation of the stencil
+@gtscript.stencil(backend=backend, externals={"f":f, "exp":exp}) # this decorator triggers compilation of the stencil
 def stencil_test(data: gtscript.Field[dtype]):
     with computation(PARALLEL), interval(...):
         x = exp(0)

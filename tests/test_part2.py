@@ -1,7 +1,7 @@
 import gt4py as gt
-#import sys
-#sys.path.append("..")
-from tests.read_serialization import *
+import sys
+sys.path.append("..")
+from read_serialization import *
 from shalconv.kernels.utils import get_1D_from_index, exit_routine
 from shalconv.kernels.stencils_part2 import *
 from shalconv.serialization import *

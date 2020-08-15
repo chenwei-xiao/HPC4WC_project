@@ -1,9 +1,9 @@
 import pytest
 import gt4py as gt
 from gt4py import gtscript
-#import sys
-#sys.path.append("..")
-from tests.read_serialization import read_serialization_part3, read_serialization_part4
+import sys
+sys.path.append("..")
+from read_serialization import read_serialization_part3, read_serialization_part4
 from shalconv.kernels.stencils_part34 import *
 from shalconv.serialization import *
 from shalconv import *
