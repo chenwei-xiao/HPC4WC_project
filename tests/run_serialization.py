@@ -18,21 +18,25 @@ LDFLAGS = f"{SERIALBOX_DIR}/lib/libSerialboxFortran.a {SERIALBOX_DIR}/lib/libSer
            {SERIALBOX_DIR}/lib/libSerialboxCore.a -L/lib/x86_64-linux-gnu -L{NETCDF_LIB} \
             -lnetcdff -lnetcdf -lpthread -lstdc++ -lstdc++fs"
 
-datapath = DATAPATH
-outputfile = "fortran/samfshalconv_generated.f90"
+datapath     = DATAPATH
+outputfile   = "fortran/samfshalconv_generated.f90"
 templatefile = "fortran/samfshalconv_serialize.template.f90"
-inputfile = "fortran/samfshalconv_serialize.f90"
-objfile = "fortran/samfshalconv_generated.o"
-targetfile = "fortran/samfshalconv_generated.x"
+inputfile    = "fortran/samfshalconv_serialize.f90"
+objfile      = "fortran/samfshalconv_generated.o"
+targetfile   = "fortran/samfshalconv_generated.x"
+
 with open(templatefile,"r") as f:
+    
     filestr = f.read().replace("DATAPATH",datapath)
     if ISDOCKER:
         filestr = filestr.replace(" QUOTATION ",'"')
         filestr = filestr.replace(" QUOTATION", '"')
     else:
         filestr = filestr.replace("QUOTATION", '')
+    
     with open(inputfile,"w") as fw:
         fw.write(filestr)
+        
 os.system(f"{SERIALBOX_DIR}/python/pp_ser/pp_ser.py --no-prefix -v --output={outputfile} {inputfile}")
 os.system(f"gfortran {FFLAGS} -c {outputfile} -o {objfile} -DDATPATH='{datapath}'")
 os.system(f"gfortran {objfile} {LDFLAGS} -o {targetfile}")

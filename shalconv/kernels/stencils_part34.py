@@ -18,6 +18,7 @@ from shalconv.physcons import (
 from .utils import *
 from . import *
 
+
 @gtscript.stencil(backend=BACKEND, rebuild=REBUILD, externals={"min": min, "max": max, "sqrt": sqrt})
 def comp_tendencies( cnvflg    : FIELD_INT,
                      k_idx     : FIELD_INT,
@@ -70,7 +71,7 @@ def comp_tendencies( cnvflg    : FIELD_INT,
                      dtmin     : DTYPE_FLOAT,
                      dt2       : DTYPE_FLOAT,
                      dtmax     : DTYPE_FLOAT,
-                     dxcrt     : DTYPE_FLOAT):
+                     dxcrt     : DTYPE_FLOAT ):
     
     # Calculate the change in moist static energy, moisture 
     # mixing ratio, and horizontal winds per unit cloud base mass 
@@ -107,8 +108,8 @@ def comp_tendencies( cnvflg    : FIELD_INT,
     
     with computation(PARALLEL), interval(1, -1):
         
-        dp = 0.0
-        dz = 0.0
+        dp  = 0.0
+        dz  = 0.0
         gdp = 0.0
         
         dv1h = 0.0
@@ -177,8 +178,8 @@ def comp_tendencies( cnvflg    : FIELD_INT,
             
             if ktcon == k_idx:
                 
-                dp   = 1000.0 * del0
-                gdp  = g/dp
+                dp     = 1000.0 * del0
+                gdp    = g/dp
                 
                 dv1h   = heo[0, 0, -1]
                 dellah = eta[0, 0, -1] * (hcko[0, 0, -1] - dv1h) * gdp
@@ -200,7 +201,7 @@ def comp_tendencies( cnvflg    : FIELD_INT,
         # depth. It is also proportional to the grid size (gdx).
         if cnvflg == 1:
             
-            tem = zi_ktcon1 - zi_kbcon1
+            tem    = zi_ktcon1 - zi_kbcon1
             tfac   = 1.0 + gdx/75000.0
             dtconv = tfac * tem/wc
             dtconv = max(dtconv, dtmin)
@@ -234,8 +235,8 @@ def comp_tendencies( cnvflg    : FIELD_INT,
             
     with computation(PARALLEL), interval(...):
         
-        rho = 0.0
-        val = 1.0
+        rho  = 0.0
+        val  = 1.0
         val1 = 2.0e-4
         val2 = 6.0e-4
         val3 = 0.001
@@ -348,7 +349,7 @@ def comp_tendencies_tr( cnvflg : FIELD_INT,
                         ctro   : FIELD_FLOAT,
                         ecko   : FIELD_FLOAT,
                         *,
-                        g      : DTYPE_FLOAT):
+                        g      : DTYPE_FLOAT ):
 
     with computation(PARALLEL), interval(...):
         
@@ -433,7 +434,7 @@ def feedback_control_update( cnvflg : FIELD_INT,
                              evfact : DTYPE_FLOAT,
                              evfactl: DTYPE_FLOAT,
                              el2orc : DTYPE_FLOAT,
-                             elocp  : DTYPE_FLOAT):
+                             elocp  : DTYPE_FLOAT ):
     
     with computation(PARALLEL), interval(...):
         
@@ -481,7 +482,7 @@ def feedback_control_update( cnvflg : FIELD_INT,
         # To avoid conditionals in the full interval
         with interval(0, 1):
             
-            dp = 0.0
+            dp  = 0.0
             dpg = 0.0
             
             if cnvflg == 1 and k_idx > kb and k_idx <= ktcon:
@@ -694,10 +695,10 @@ def feedback_control_update( cnvflg : FIELD_INT,
                         else:
                             rn = rn - tem1
                         
-                        q1     = q1 + qevap
-                        t1     = t1 - elocp * qevap
-                        deltv  = -elocp * qevap/dt2
-                        delq   = qevap/dt2
+                        q1    = q1 + qevap
+                        t1    = t1 - elocp * qevap
+                        deltv = -elocp * qevap/dt2
+                        delq  = qevap/dt2
                         
                         delqev = delqev + 0.001 * dp * qevap/g
                         
@@ -766,7 +767,7 @@ def feedback_control_upd_trr( cnvflg : FIELD_INT,
                               qtr    : FIELD_FLOAT,
                               *,
                               dt2    : DTYPE_FLOAT,
-                              g      : DTYPE_FLOAT):
+                              g      : DTYPE_FLOAT ):
     
     with computation(PARALLEL), interval(...):
         delebar = 0.0
@@ -834,7 +835,7 @@ def separate_detrained_cw( cnvflg: FIELD_INT,
                            *,
                            dt2   : DTYPE_FLOAT,
                            tcr   : DTYPE_FLOAT,
-                           tcrf  : DTYPE_FLOAT):
+                           tcrf  : DTYPE_FLOAT ):
     
     with computation(PARALLEL), interval(...):
         
@@ -872,7 +873,7 @@ def tke_contribution( cnvflg  : FIELD_INT,
                       sigmagfm: FIELD_FLOAT,
                       qtr_ntk : FIELD_FLOAT,
                       *,
-                      betaw   : DTYPE_FLOAT):
+                      betaw   : DTYPE_FLOAT ):
     
     with computation(PARALLEL), interval(1, -1):
         
@@ -888,5 +889,3 @@ def tke_contribution( cnvflg  : FIELD_INT,
             sigmagfm = max(sigmagfm, betaw)
             ptem     = tem/(sigmagfm * tem1)
             qtr_ntk  = qtr_ntk + 0.5 * sigmagfm * ptem * ptem
-
-########################################################################

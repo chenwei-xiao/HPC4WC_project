@@ -2,11 +2,11 @@
 ## Package `shalconv` structure
 - `__init__.py`: configuration
 - `funcphys.py`: thermodynamic functions
-- `physcons.py`: Constants
-- `samfaerosols.py`: Aerosol process
-- `samfshalcnv.py`: shalcnv scheme
-- `serialization.py`: Serialization
-- `kernels/stencils_*.py`: GT4Py stencils of the shalcnv scheme
+- `physcons.py`: constants
+- `samfaerosols.py`: aerosol processes
+- `samfshalcnv.py`: shallow convection scheme
+- `serialization.py`: serialization
+- `kernels/stencils_*.py`: GT4Py stencils of the shallow convection scheme
 - `kernels/utils.py`: useful functions for GT4Py arrays
 
 ## Unit tests
@@ -14,17 +14,17 @@
 - `read_serialization.py`: read serialization data for unit tests
 - `run_serialization.py`: generate serialization for unit tests
 - `test_fpvsx.py`: test fpvsx function
-- `test_part1.py`: test part1 of shalconv scheme
-- `test_part2.py`: test part2 of shalconv scheme
-- `test-part34.py`: test part3 and part4 of shalconv scheme
+- `test_part1.py`: test part1 of shallow convection scheme
+- `test_part2.py`: test part2 of shallow convection scheme
+- `test-part34.py`: test part3 and part4 of shallow convection scheme
 
 ## Other files
 - `build.sh`: script for building environment as docker image
 - `enter.sh`: script for entering the docker environment
 - `env_daint`: script for setting up environment in Piz Daint
 - `submit_job.sh`: script for submitting SLURM jobs in Piz Daint of benchmarking shalconv scheme with gtcuda and gtx86 backends
-- `main.py`: validation for shalconv scheme
-- `benchmark.py`: benchmark shalconv scheme with various number of columns (ix)
+- `main.py`: validation for shallow convection scheme
+- `benchmark.py`: benchmark shallow convection scheme with various number of columns (ix)
 - `plot.py`: plot benchmark results (already hardcoded)
 
 ## Storage in GT4Py

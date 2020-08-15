@@ -22,6 +22,7 @@ from shalconv.physcons import (
     con_e     as e
 )
 
+
 def samfshalcnv_part1(data_dict):
     """
     Scale-Aware Mass-Flux Shallow Convection
@@ -29,7 +30,6 @@ def samfshalcnv_part1(data_dict):
     :param data_dict: Dict of parameters required by the scheme
     :type data_dict: Dict of either scalar or gt4py storage
     """
-    
 
 ############################ INITIALIZATION ############################
 
@@ -256,12 +256,12 @@ def samfshalcnv_part1(data_dict):
     w4s     = -2.0e-5
     
     # Initialize the rest
-    init_kbm_kmax(kbm, k_idx, kmax, state_buf1, state_buf2, tx1, ps, prsl, km=km)
+    init_kbm_kmax( kbm, k_idx, kmax, state_buf1, state_buf2, tx1, ps, prsl, km=km )
     init_final( kbm, k_idx, kmax, flg, cnvflg, kpbl, tx1,
                 ps, prsl, zo, phil, zi, pfld, eta, hcko, qcko, 
                 qrcko, ucko, vcko, dbyo, pwo, dellal, to, qo, 
                 uo, vo, wu2, buo, drag, cnvwt, qeso, heo, heso, hpbl,
-                t1, q1, u1, v1, km=km)
+                t1, q1, u1, v1, km=km )
                 
     
     # Tracers loop (THIS GOES AT THE END AND POSSIBLY MERGED WITH OTHER 
@@ -275,7 +275,7 @@ def samfshalcnv_part1(data_dict):
         # Initialize tracers. Keep in mind that, qtr slice is for the 
         # n-th tracer, while the other storages are slices representing 
         # the (n-2)-th tracer.
-        #init_tracers( cnvflg, k_idx, kmax, ctr, ctro, ecko, qtr_shift)
+        #init_tracers( cnvflg, k_idx, kmax, ctr, ctro, ecko, qtr_shift )
     return {"heo":heo, "heso":heso, "qo":qo, "qeso":qeso,
             "km":km, "kbm":kbm, "kmax":kmax, "kb":kb, "kpbl":kpbl,
             "kbcon": kbcon, "ktcon":ktcon, #"ktcon1":ktcon1, "kbcon1":kbcon1
@@ -291,30 +291,35 @@ def samfshalcnv_part1(data_dict):
             "u1":u1, "v1":v1, "gdx":gdx, "garea":garea, "dtconv":dtconv, "delp":delp,
             "cnvc":cnvc, "cnvw":cnvw, "t1":t1}
 
+
 def test_part1_ser():
-    data_dict = read_data(0, True, path = DATAPATH)
-    gt4py_dict = numpy_dict_to_gt4py_dict(data_dict)
+    data_dict   = read_data(0, True, path = DATAPATH)
+    gt4py_dict  = numpy_dict_to_gt4py_dict(data_dict)
     out_dict_p2 = read_serialization_part2()
     out_dict_p3 = read_serialization_part3()
     out_dict_p4 = read_serialization_part4()
+    
     ret_dict = samfshalcnv_part1(gt4py_dict)
     exp_data = view_gt4pystorage(ret_dict)
-    ref_data = view_gt4pystorage(out_dict_p2)
-    ref_data["u1"] = out_dict_p3["u1"].view(np.ndarray)
-    ref_data["v1"] = out_dict_p3["v1"].view(np.ndarray)
-    ref_data["gdx"] = out_dict_p3["gdx"].view(np.ndarray)
-    ref_data["garea"] = out_dict_p3["garea"].view(np.ndarray)
+    
+    ref_data           = view_gt4pystorage(out_dict_p2)
+    ref_data["u1"]     = out_dict_p3["u1"].view(np.ndarray)
+    ref_data["v1"]     = out_dict_p3["v1"].view(np.ndarray)
+    ref_data["gdx"]    = out_dict_p3["gdx"].view(np.ndarray)
+    ref_data["garea"]  = out_dict_p3["garea"].view(np.ndarray)
     ref_data["dtconv"] = out_dict_p3["dtconv"].view(np.ndarray)
-    ref_data["delp"] = out_dict_p3["delp"].view(np.ndarray)
-    ref_data["cnvc"] = out_dict_p4["cnvc"].view(np.ndarray)
-    ref_data["cnvw"] = out_dict_p4["cnvw"].view(np.ndarray)
-    ref_data["t1"] = out_dict_p4["t1"].view(np.ndarray)
+    ref_data["delp"]   = out_dict_p3["delp"].view(np.ndarray)
+    ref_data["cnvc"]   = out_dict_p4["cnvc"].view(np.ndarray)
+    ref_data["cnvw"]   = out_dict_p4["cnvw"].view(np.ndarray)
+    ref_data["t1"]     = out_dict_p4["t1"].view(np.ndarray)
     #ref_data = view_gt4pystorage({"heo":out_dict_p2["heo"], "heso":out_dict_p2["heso"],
     #                              "qo":out_dict_p2["qo"], "qeso":out_dict_p2["qeso"],
     #                              "km":out_dict_p2["km"], "kbm":out_dict_p2["kbm"],
     #                              "kmax":out_dict_p2["kmax"], "kcnv":out_dict_p4["kcnv"],
     #                              "cnvflg":out_dict_p2["cnvflg"]})
+    
     compare_data(exp_data, ref_data)
+
 
 if __name__ == "__main__":
     test_part1_ser()

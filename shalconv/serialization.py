@@ -49,36 +49,47 @@ def numpy_dict_to_gt4py_dict(data_dict, backend = BACKEND):
     ix = int(data_dict["ix"])#im <= ix
     km = int(data_dict["km"])
     new_data_dict = {}
+    
     for var in data_dict:
+        
         data = data_dict[var]
         ndim = len(data.shape)
         #if var == "fscav":
         #    data_dict["fscav"] = data # shape = (number of tracers)
+        
         if (ndim > 0) and (ndim <= 2) and (data.size >= 2):
+            
             default_origin = (0, 0, 0)
             arrdata = np.zeros((1,ix,km))
+            
             if ndim == 1: # 1D array (horizontal dimension)
                 arrdata[...] = data[np.newaxis, :, np.newaxis]
             elif ndim == 2: #2D array (horizontal dimension, vertical dimension)
                 arrdata[...] = data[np.newaxis, :, :]
+                
             dtype = DTYPE_INT if var in int_arrs else DTYPE_FLOAT
             new_data_dict[var] = gt.storage.from_array(arrdata, backend, default_origin, dtype = dtype)
+            
         elif ndim == 3: #3D array qntr(horizontal dimension, vertical dimension, number of tracers)
             new_data_dict[var] = deepcopy(data)
         else: # scalars
             new_data_dict[var] = deepcopy(data)
+            
     return new_data_dict
     
 def compare_data(exp_data, ref_data):
     wrong = []
-    flag = True
+    flag  = True
+    
     for key in exp_data:
         mask = ~np.isnan(ref_data[key])
+        
         if not np.allclose(exp_data[key][mask], ref_data[key][mask]):
             wrong.append(key)
             flag = False
         else:
             print(f"Successfully validate {key}!")
+            
     assert flag, f"Data from exp and ref does not match for field {wrong}"
 
 def read_data(tile, is_in, path = DATAPATH, ser_count = 0):
@@ -91,58 +102,73 @@ def read_data(tile, is_in, path = DATAPATH, ser_count = 0):
     """
     #TODO: read_async and readbuffer
     serializer = ser.Serializer(ser.OpenModeKind.Read, path, "Generator_rank" + str(tile))
-    inoutstr = "in" if is_in else "out"
-    sp = ser.Savepoint(f"samfshalcnv-{inoutstr}-{ser_count:0>6d}")
-    vars = IN_VARS if is_in else OUT_VARS
-    data = data_dict_from_var_list(vars, serializer, sp)
+    inoutstr   = "in" if is_in else "out"
+    sp         = ser.Savepoint(f"samfshalcnv-{inoutstr}-{ser_count:0>6d}")
+    vars       = IN_VARS if is_in else OUT_VARS
+    data       = data_dict_from_var_list(vars, serializer, sp)
+    
     return data
 
 def read_input_x_index(tile, ser_count, indices, path = DATAPATH):
+    
     serializer = ser.Serializer(ser.OpenModeKind.Read, path, "Generator_rank" + str(tile))
-    sp = ser.Savepoint(f"samfshalcnv-in-{ser_count:0>6d}")
-    vars = set(IN_VARS) - set(scalar_vars)
-    data = data_dict_from_var_list(vars, serializer, sp)
+    sp         = ser.Savepoint(f"samfshalcnv-in-{ser_count:0>6d}")
+    vars       = set(IN_VARS) - set(scalar_vars)
+    data       = data_dict_from_var_list(vars, serializer, sp)
+    
     for key in data:
+        
         ndim = len(data[key].shape)
-        arr = data[key]
+        arr  = data[key]
+        
         if ndim == 1 and key != "fscav":
             data[key] = arr[indices]
         elif ndim == 2:
             data[key] = arr[indices,:]
         elif ndim == 3:
             data[key] = arr[indices,:,:]
+            
     return data
 
 def read_random_input(length, ix, ntile, ncount, path = DATAPATH):
-    tile = np.ndarray((length,), dtype=DTYPE_INT)
+    tile      = np.ndarray((length,), dtype=DTYPE_INT)
     ser_count = np.ndarray((length,), dtype=DTYPE_INT)
-    index = np.ndarray((length,), dtype=DTYPE_INT)
+    index     = np.ndarray((length,), dtype=DTYPE_INT)
+    
     for n in range(length):
-        tile[n] = random.randint(0, ntile - 1)
+        tile[n]      = random.randint(0, ntile - 1)
         ser_count[n] = random.randint(0, ncount - 1)
-        index[n] = random.randint(0, ix - 1)
-    ind = np.lexsort((index, ser_count, tile))
-    index = index[ind]
+        index[n]     = random.randint(0, ix - 1)
+        
+    ind       = np.lexsort((index, ser_count, tile))
+    index     = index[ind]
     ser_count = ser_count[ind]
-    tile = tile[ind]
-    breaks = []
-    prev = (tile[0], ser_count[0])
+    tile      = tile[ind]
+    breaks    = []
+    prev      = (tile[0], ser_count[0])
     for n in range(1, length):
         curr = (tile[n], ser_count[n])
+        
         if prev != curr:
             breaks.append(n)
+        
         prev = curr
-    index = np.split(index, breaks)
+        
+    index     = np.split(index, breaks)
     data_list = []
+    
     for i in range(len(breaks)):
-        tile_i = tile[breaks[i]]
+        tile_i      = tile[breaks[i]]
         ser_count_i = ser_count[breaks[i]]
-        index_i = index[i]
+        index_i     = index[i]
+        
         data_list.append(read_input_x_index(tile_i, ser_count_i, index_i, path=path))
+    
     output = {}
     for key in data_list[0]:
         data = data_list[0][key]
         ndim = len(data.shape)
+        
         if key == "fscav":
             output[key] = data
         elif ndim == 1:
@@ -151,18 +177,23 @@ def read_random_input(length, ix, ntile, ncount, path = DATAPATH):
             output[key] = np.zeros((length, data.shape[1]), dtype=data.dtype, order='F')
         elif ndim == 3:
             output[key] = np.zeros((length, data.shape[1], data.shape[2]), dtype=data.dtype, order='F')
+    
     breaks.append(length)
     breaks.insert(0, 0)
+    
     for key in output:
         if key != "fscav":
             for i in range(len(data_list)):
                 output[key][breaks[i]:breaks[i+1],...] = data_list[i][key]
+    
     return output
 
 def view_gt4pystorage(data_dict):
     new_data_dict = {}
+    
     for key in data_dict:
         data = data_dict[key]
         if not isinstance(data, np.ndarray): data.synchronize()
         new_data_dict[key] = data.view(np.ndarray)
+        
     return new_data_dict

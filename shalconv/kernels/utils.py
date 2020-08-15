@@ -43,12 +43,13 @@ def exit_routine(cnvflg, im):
     cnvflg_np = cnvflg[0,:im,0].view(np.ndarray)
     return cnvflg_np.sum() == 0
 
+
 @gtscript.stencil(backend=BACKEND, rebuild=REBUILD)
 def get_1D_from_index(
-        infield: FIELD_FLOAT, #2D array X
+        infield : FIELD_FLOAT, #2D array X
         outfield: FIELD_FLOAT, #1D array X[i,ind(i)]
-        ind: FIELD_INT, #1D array ind
-        k_idx: FIELD_INT #1D array k_idx
+        ind     : FIELD_INT, #1D array ind
+        k_idx   : FIELD_INT #1D array k_idx
 ):
     with computation(FORWARD), interval(0, 1):
         outfield = infield
@@ -60,4 +61,5 @@ def get_1D_from_index(
 
     with computation(BACKWARD), interval(0, -1):
         outfield = outfield[0, 0, 1]
+        
 ########################################################################

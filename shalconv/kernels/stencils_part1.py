@@ -18,14 +18,14 @@ def pa_to_cb( psp  : FIELD_FLOAT,
               delp : FIELD_FLOAT,
               ps   : FIELD_FLOAT,
               prsl : FIELD_FLOAT,
-              del0  : FIELD_FLOAT):
+              del0  : FIELD_FLOAT ):
 
     with computation(PARALLEL), interval(...):
         
         # Convert input Pa terms to Cb terms
         ps   = psp   * 0.001
         prsl = prslp * 0.001
-        del0  = delp  * 0.001
+        del0 = delp  * 0.001
         
 
 @gtscript.stencil(backend=BACKEND, rebuild=REBUILD)
@@ -39,7 +39,7 @@ def init_col_arr( kcnv  : FIELD_INT,
                   gdx   : FIELD_FLOAT,
                   garea : FIELD_FLOAT,
                   *,
-                  km    : DTYPE_INT):
+                  km    : DTYPE_INT ):
     
     with computation(PARALLEL), interval(...):
         
@@ -70,7 +70,7 @@ def init_par_and_arr( islimsk: FIELD_INT,
                       *,
                       c0s    : DTYPE_FLOAT,
                       asolfac: DTYPE_FLOAT,
-                      d0     : DTYPE_FLOAT):
+                      d0     : DTYPE_FLOAT ):
     
     with computation(PARALLEL), interval(...):
         
@@ -98,30 +98,34 @@ def init_par_and_arr( islimsk: FIELD_INT,
         dt_mf = 0.0
 
 @gtscript.stencil(backend=BACKEND, rebuild=REBUILD, externals={"min": min, "max": max})
-def init_kbm_kmax(kbm       : FIELD_INT,
-                  k_idx     : FIELD_INT,
-                  kmax      : FIELD_INT,
-                  state_buf1: FIELD_INT,
-                  state_buf2: FIELD_INT,
-                  tx1       : FIELD_FLOAT,
-                  ps        : FIELD_FLOAT,
-                  prsl      : FIELD_FLOAT,
-                  *,
-                  km        : DTYPE_INT):
-					  
+def init_kbm_kmax( kbm       : FIELD_INT,
+                   k_idx     : FIELD_INT,
+                   kmax      : FIELD_INT,
+                   state_buf1: FIELD_INT,
+                   state_buf2: FIELD_INT,
+                   tx1       : FIELD_FLOAT,
+                   ps        : FIELD_FLOAT,
+                   prsl      : FIELD_FLOAT,
+                   *,
+                   km        : DTYPE_INT ):
+                      
     with computation(FORWARD):
+        
         # Determine maximum indices for the parcel starting point (kbm)
         # and cloud top (kmax)
         with interval(0, 1):
             tx1 = 1.0/ps
+            
             if prsl * tx1 > 0.7:
                 kbm = k_idx + 1
                 state_buf1 = 1
             else:
                 kbm = km
                 state_buf1 = 0 # means kbm is set to default `km`
+                
         with interval(1, None):
             tx1 = 1.0 / ps
+            
             if prsl * tx1 > 0.7:
                 kbm = k_idx + 1
                 state_buf1 = 1
@@ -131,7 +135,9 @@ def init_kbm_kmax(kbm       : FIELD_INT,
             else:
                 kbm = km
                 state_buf1 = 0
+                
     with computation(FORWARD):
+        
         with interval(0, 1):
             if prsl * tx1 > 0.6:
                 kmax = k_idx + 1
@@ -139,6 +145,7 @@ def init_kbm_kmax(kbm       : FIELD_INT,
             else:
                 kmax = km
                 state_buf2 = 0 # means kmax is set to default `km`
+        
         with interval(1, None):
             if prsl * tx1 > 0.6:
                 kmax = k_idx + 1
@@ -149,9 +156,12 @@ def init_kbm_kmax(kbm       : FIELD_INT,
             else:
                 kmax = km
                 state_buf2 = 0
+                
     with computation(BACKWARD):
+        
         with interval(-1, None):
             kbm = min(kbm, kmax)
+        
         with interval(0, -1):
             kbm = kbm[0,0,1]
             kmax = kmax[0,0,1]
@@ -197,9 +207,10 @@ def init_final( kbm   : FIELD_INT,
                 u1    : FIELD_FLOAT,
                 v1    : FIELD_FLOAT,
                 *,
-                km    : DTYPE_INT):
-					
+                km    : DTYPE_INT ):
+                    
     with computation(PARALLEL), interval(...):
+        
         # Calculate hydrostatic height at layer centers assuming a flat 
         # surface (no terrain) from the geopotential
         zo = phil/g
@@ -218,7 +229,7 @@ def init_final( kbm   : FIELD_INT,
         
         # Find the index for the PBL top using the PBL height; enforce 
         # that it is lower than the maximum parcel starting level
-        flg = flg[0, 0, -1]
+        flg  = flg[0, 0, -1]
         kpbl = kpbl[0, 0, -1]
         if (flg == 1) and (zo <= hpbl):
             kpbl = k_idx
@@ -226,7 +237,7 @@ def init_final( kbm   : FIELD_INT,
             flg  = 0 # False
 
     with computation(FORWARD), interval(-1, None):
-        flg = flg[0, 0, -1]
+        flg  = flg[0, 0, -1]
         kpbl = kpbl[0, 0, -1]
     
     with computation(BACKWARD),interval(0,-1):
@@ -239,7 +250,7 @@ def init_final( kbm   : FIELD_INT,
         
         kpbl = min(kpbl, kbm)
 
-        #temporary var have to be defined outside of if-clause
+        # Temporary var have to be defined outside of if-clause
         tem  = 0.0
         fpvsto = fpvs(t1) #fpvs(to) and to = t1
         
@@ -271,10 +282,10 @@ def init_final( kbm   : FIELD_INT,
             # moisture values
             qeso = 0.01 * fpvsto
             qeso = (eps * qeso)/(pfld + epsm1 * qeso)    # fpsv is a function (can't be called inside conditional), also how to access lookup table?
-            #val1 = 1.0e-8
-            #val2 = 1.0e-10
-            qeso = qeso if qeso > 1.0e-8 else 1.0e-8#max(qeso, val1 )
-            qo   = qo if qo > 1.0e-10 else 1.0e-10  #max(qo  , val2)
+            val1 = 1.0e-8
+            val2 = 1.0e-10
+            qeso = max(qeso, val1 )
+            qo   = max(qo, val2)
             
             # Calculate moist static energy (heo) and saturation moist 
             # static energy (heso)

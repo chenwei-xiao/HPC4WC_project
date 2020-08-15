@@ -11,9 +11,11 @@ from lxml import etree
 # need to exclude subscript and assignment target from read lists
 # selector.getpath(node)
 
+
 def parse_xml():
     root = etree.parse("fortran/samfshalconv.xml")
     return root
+
 
 def visit_loop(node):
     indexvars = node.xpath(".//index-variable")
@@ -21,24 +23,31 @@ def visit_loop(node):
     writevars = node.xpath(".//assignment/target/name")
     readvars = [i for i in node.xpath(".//*[not(name()='target')]/name")
                 if i.get("id") not in indexvar_ids]
+    
     return indexvars, writevars, readvars
+
 
 def find_vars_in_range(node, startlineno, endlineno):
     writevars = [i for i in node.xpath(".//assignment/target/name")
                  if int(i.get("line_begin")) >= startlineno and int(i.get("line_begin")) <= endlineno]
-    readvars = [i for i in node.xpath(".//*[not(name()='target')]/name")
-                if int(i.get("line_begin")) >= startlineno and int(i.get("line_begin")) <= endlineno]
+    readvars  = [i for i in node.xpath(".//*[not(name()='target')]/name")
+                 if int(i.get("line_begin")) >= startlineno and int(i.get("line_begin")) <= endlineno]
+    
     return writevars, readvars
+
 
 def get_declared_vars(root = parse_xml()):
     return [i.get("name") for i in root.xpath(".//variables/variable")]
 
+
 def get_declared_arr_vars(root = parse_xml()):
     return [i.get("name") for i in root.xpath(".//variables/variable[dimensions]")]
+
 
 def get_nonfloat_arr_vars(root = parse_xml()):
     return [i.get("name") for i in
             root.xpath(".//declaration[type[@name='integer' or @name='logical']]/variables/variable[dimensions]")]
+
 
 def get_arguments_range(startlineno, endlineno):
     root = parse_xml()
@@ -49,10 +58,13 @@ def get_arguments_range(startlineno, endlineno):
                     if i.get("id") not in ["n","i","k","min","max","fpvs","fpvsx"]])
     readvars_list = [i for i in declaredarrvars if i in readvars]
     writevars_list = [i for i in declaredarrvars if i in writevars]
+    
     return writevars_list, readvars_list, set(readvars_list).intersection(writevars_list)
+
 
 def print_ser_def(varlist):
     return " ".join([var+"="+var for var in varlist])
+
 
 #root = etree.parse("fortran/samfshalconv.xml")
 #res = root.xpath('/ofp/file/subroutine/body/loop')

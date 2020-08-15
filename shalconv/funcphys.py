@@ -18,8 +18,8 @@ c1xpvs = None
 c2xpvs = None
 
 ### Look-up table for saturation vapor pressure ###
-nxpvs    = 7501                  # Size of look-up table
-tbpvs    = np.empty(nxpvs)       # Look-up table stored as a 1D numpy array
+nxpvs = 7501                  # Size of look-up table
+tbpvs = np.empty(nxpvs)       # Look-up table stored as a 1D numpy array
 
 tbpvs_gt = gt.storage.from_array(tbpvs, BACKEND, (0,), dtype=DTYPE_FLOAT)
 
@@ -53,7 +53,7 @@ def fpvs(t):
 
 # Compute exact saturation vapor pressure from temperature
 def fpvsx(t):
-    tr = con_ttp/t
+    tr   = con_ttp/t
     tliq = con_ttp
     tice = con_ttp - 20.0
     
@@ -62,7 +62,7 @@ def fpvsx(t):
     elif t < tice:
         return con_psat * (tr**con_xponai) * np.exp(con_xponbi * (1.0 - tr))
     else:
-        w = (t - tice)/(tliq - tice)
+        w   = (t - tice)/(tliq - tice)
         pvl = con_psat * (tr**con_xponal) * np.exp(con_xponbl * (1.0 - tr))
         pvi = con_psat * (tr**con_xponai) * np.exp(con_xponbi * (1.0 - tr))
         
@@ -72,24 +72,26 @@ def fpvsx(t):
 # Function fpvsx as gtscript.function, to be used in stencils
 @gtscript.function
 def fpvsx_gt(t):
-    tr = con_ttp/t
+    tr   = con_ttp/t
     tliq = con_ttp
     tice = con_ttp - 20.0
-
+    
     tmp_l = np.e**(con_xponbl * (1.0 - tr))
     tmp_i = np.e**(con_xponbi * (1.0 - tr))
-    ret = 0.0
-    w = 0.0
-    pvl = 0.0
-    pvi = 0.0
+    ret   = 0.0
+    w     = 0.0
+    pvl   = 0.0
+    pvi   = 0.0
+    
     if t >= tliq:
         ret = con_psat * (tr**con_xponal) * tmp_l
     elif t < tice:
         ret = con_psat * (tr**con_xponai) * tmp_i
     else:
-        w = (t - tice)/(tliq - tice)
+        w   = (t - tice)/(tliq - tice)
         pvl = con_psat * (tr**con_xponal) * tmp_l
         pvi = con_psat * (tr**con_xponai) * tmp_i
         
         ret = w * pvl + (1.0 - w) * pvi
+        
     return ret
