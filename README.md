@@ -16,7 +16,7 @@
 - `test_fpvsx.py`: test fpvsx function
 - `test_part1.py`: test part1 of shallow convection scheme
 - `test_part2.py`: test part2 of shallow convection scheme
-- `test-part34.py`: test part3 and part4 of shallow convection scheme
+- `test_part34.py`: test part3 and part4 of shallow convection scheme
 
 ## Other files
 - `build.sh`: script for building environment as docker image
